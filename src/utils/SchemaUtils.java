@@ -12,6 +12,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import model.Column;
+import model.Table;
+import model.User;
+
 
 public class SchemaUtils
 {
@@ -26,15 +30,12 @@ public class SchemaUtils
 
     public static String getTableName(String path)
     {
-        Path p = Paths.get(path);
-        String fileName = p.getFileName().toString();
-        String[] parts = fileName.split(".json");
-        return parts[0];
-
-        /*
-         * String fname = file.getName(); int pos = fname.lastIndexOf("."); if
-         * (pos > 0) { fname = fname.substring(0, pos); }
-         */
+        Path p = Paths.get(path);                
+        String fname = p.getFileName().toString();
+        int pos = fname.lastIndexOf("."); 
+        if (pos > 0) 
+            fname = fname.substring(0, pos); 
+        return fname; 
     }
 
     public static String formatName(String str)
@@ -67,11 +68,11 @@ public class SchemaUtils
             {
                 Table newTable = new Table();
                 newTable.setName(formatName(key));
-                newTable.setType(Table.TABLE_TYPE);
+                newTable.setType(Table.TYPE_TABLE);
                 newTable.setOwner(user);
                 newTable.setComment((String) colData.get("description"));
                 tables.add(newTable);
-                parseJsonSchema(newTable, tables, columns, user,
+                parseSchemaProperties(newTable, tables, columns, user,
                     (JSONObject) colData.get("properties"));
             }
         }
@@ -96,35 +97,24 @@ public class SchemaUtils
         }
     }
 
-    // append table name?
     public static void parseJsonSchema(String path)
     {
+        JSONObject schema = getJson(path);
+        
         LinkedList<Table> tables = new LinkedList<Table>();
         LinkedList<Column> columns = new LinkedList<Column>();
 
         User user = new User();
         user.setName(USER_NAME);
+        
+        Table rootTable = new Table();
+        rootTable.setName(getTableName(path));
+        rootTable.setType(Table.TYPE_TABLE);
+        rootTable.setOwner(user);
+        rootTable.setComment((String)schema.get("description"));
 
-        // String s_path = "e:\\address.json";
+        JSONObject properties = (JSONObject)schema.get("properties");
 
-        /*
-         * try { JSONParser parser = new JSONParser(); JSONObject schema =
-         * (JSONObject)parser.parse(new FileReader(s_path));
-         */
-        JSONObject schema = getJson(path);
-        Table t1 = new Table();
-
-        t1.setName(getTableName(s_path));
-        t1.setType(Table.TABLE_TYPE);
-        t1.setOwner(user);
-        t1.setComment((String) schema.get("description"));
-
-        JSONObject properties = (JSONObject) schema.get("properties");
-
-        parseJsonSchema(t1, tables, columns, user, properties);
-        /*
-         * }catch( IOException e) { e.printStackTrace(); }catch( ParseException
-         * e) { e.printStackTrace(); }
-         */
+        parseSchemaProperties(rootTable, tables, columns, user, properties);       
     }
 }

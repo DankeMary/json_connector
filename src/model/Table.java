@@ -1,4 +1,4 @@
-
+package model;
 public class Table
 {
     public static final String TYPE_TABLE = "TABLE";
