@@ -30,12 +30,12 @@ public class SchemaUtils
 
     public static String getTableName(String path)
     {
-        Path p = Paths.get(path);                
+        Path p = Paths.get(path);
         String fname = p.getFileName().toString();
-        int pos = fname.lastIndexOf("."); 
-        if (pos > 0) 
-            fname = fname.substring(0, pos); 
-        return fname; 
+        int pos = fname.lastIndexOf(".");
+        if (pos > 0)
+            fname = fname.substring(0, pos);
+        return fname;
     }
 
     public static String formatName(String str)
@@ -49,31 +49,68 @@ public class SchemaUtils
         return finStr.toString();
     }
 
-    public static void parseSchemaProperties(Table parentTable,
-        List<Table> tables, List<Column> columns, User user, JSONObject props)
+    public static Column handleColumn(Table parentTable, List<Column> columns,
+        String name, JSONObject colData)
+    {
+        Column newCol = new Column();
+        newCol.setName(formatName(name));
+        newCol.setType((String) colData.get("type"));
+        newCol.setComment((String) colData.get("description"));
+        newCol.setTable(parentTable);
+        columns.add(newCol);
+        return newCol;
+    }
+
+    public static Table handleTable(String name, User user, JSONObject tabData,
+        List<Table> tables)
+    {
+        Table newTable = new Table();
+        newTable.setName(formatName(name));
+        newTable.setType(Table.TYPE_TABLE);
+        newTable.setOwner(user);
+        newTable.setComment((String) tabData.get("description"));
+        tables.add(newTable);
+        return newTable;
+    }
+
+    // props -> infinite loop
+    public static JSONObject findDef(String path, JSONObject obj)
+    {
+        if (path == null || path.isEmpty())
+            return null;
+        if (path.indexOf("/") == -1)
+            return (JSONObject) obj.get(path);
+        if (path.substring(0, 1).equals("#"))
+            return findDef(path.substring(path.indexOf("/") + 1), obj);
+        else
+            return findDef(path.substring(path.indexOf("/") + 1),
+                (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
+    }
+
+    public static void parseSchemaProperties(JSONObject schema,
+        Table parentTable, List<Table> tables, List<Column> columns, User user,
+        JSONObject props, JSONObject defs)
     {
         for (Object keyObj : props.keySet())
         {
             String key = (String) keyObj;
             JSONObject colData = (JSONObject) props.get(key);
+            Column newCol;
 
-            Column newCol = new Column();
-            newCol.setName(formatName(key));
-            newCol.setType((String) colData.get("type"));
-            newCol.setComment((String) colData.get("description"));
-            newCol.setTable(parentTable);
-            columns.add(newCol);
+            if (colData.containsKey("$ref"))
+                newCol = handleColumn(parentTable, columns, key,
+                    findDef((String) colData.get("$ref"), schema));
+            else
+                newCol = handleColumn(parentTable, columns, key, colData);
 
             if (newCol.getType().equals("object"))
             {
-                Table newTable = new Table();
-                newTable.setName(formatName(key));
-                newTable.setType(Table.TYPE_TABLE);
-                newTable.setOwner(user);
-                newTable.setComment((String) colData.get("description"));
-                tables.add(newTable);
-                parseSchemaProperties(newTable, tables, columns, user,
-                    (JSONObject) colData.get("properties"));
+                if (colData.containsKey("$ref"))
+                    colData = findDef((String) colData.get("$ref"), schema);
+                Table newTable = handleTable(key, user, colData, tables);
+
+                parseSchemaProperties(schema, newTable, tables, columns, user,
+                    (JSONObject) colData.get("properties"), defs);
             }
         }
     }
@@ -100,21 +137,26 @@ public class SchemaUtils
     public static void parseJsonSchema(String path)
     {
         JSONObject schema = getJson(path);
-        
+
         LinkedList<Table> tables = new LinkedList<Table>();
         LinkedList<Column> columns = new LinkedList<Column>();
 
         User user = new User();
         user.setName(USER_NAME);
-        
-        Table rootTable = new Table();
-        rootTable.setName(getTableName(path));
-        rootTable.setType(Table.TYPE_TABLE);
-        rootTable.setOwner(user);
-        rootTable.setComment((String)schema.get("description"));
 
-        JSONObject properties = (JSONObject)schema.get("properties");
+        Table rootTable = handleTable(getTableName(path), user, schema, tables);
 
-        parseSchemaProperties(rootTable, tables, columns, user, properties);       
+        JSONObject properties = (JSONObject) schema.get("properties");
+        JSONObject defs = (JSONObject) schema.get("definitions");
+
+        parseSchemaProperties(schema, rootTable, tables, columns, user,
+            properties, defs);
+        /*for (Table t : tables)
+            System.out.print(t.getName() + " ");
+
+        System.out.println();
+
+        for (Column c : columns)
+            System.out.print(c.getName() + " ");*/
     }
 }
