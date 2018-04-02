@@ -28,6 +28,12 @@ public class SchemaUtils
         return word.substring(0, 1).toUpperCase() + word.substring(1);
     }
 
+    /**
+     * Берет имя таблицы из пути к файлу схемы
+     * 
+     * @param path путь к файлу
+     * @return     имя таблицы
+     */
     public static String getTableName(String path)
     {
         Path p = Paths.get(path);
@@ -38,6 +44,12 @@ public class SchemaUtils
         return fname;
     }
 
+    /**
+     * Преобразует названия к lowerCamelCase
+     * 
+     * @param str название
+     * @return    форматированное название
+     */
     public static String formatName(String str)
     {
         if (str.isEmpty())
@@ -49,6 +61,16 @@ public class SchemaUtils
         return finStr.toString();
     }
 
+    /**
+     * Создает объект столбца таблицы, заполняет его данными и добавляет в
+     * список столбцов
+     * 
+     * @param parentTable таблица-владелец
+     * @param columns     список столбцов
+     * @param name        название столбца
+     * @param colData     данные о столбце
+     * @return            экземпляр столбца с данными
+     */
     public static Column handleColumn(Table parentTable, List<Column> columns,
         String name, JSONObject colData)
     {
@@ -61,6 +83,15 @@ public class SchemaUtils
         return newCol;
     }
 
+    /**
+     * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
+     * 
+     * @param name    имя таблицы
+     * @param user    пользователь-владелец
+     * @param tabData данные о таблице
+     * @param tables  список таблиц
+     * @return        экземпляр таблицы с данными
+     */
     public static Table handleTable(String name, User user, JSONObject tabData,
         List<Table> tables)
     {
@@ -74,6 +105,13 @@ public class SchemaUtils
     }
 
     // props -> infinite loop
+    /**
+     * Поиск значения ключа по заданной ссылке
+     * 
+     * @param path путь
+     * @param obj  область поиска
+     * @return     значение ключа по ссылке
+     */
     public static JSONObject findDef(String path, JSONObject obj)
     {
         if (path == null || path.isEmpty())
@@ -87,6 +125,17 @@ public class SchemaUtils
                 (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
     }
 
+    /**
+     * Разбор пар в properties на столбцы и таблицы
+     * 
+     * @param schema      корневая JSON-схема
+     * @param parentTable таблица-владелец
+     * @param tables      список таблиц
+     * @param columns     список столбцов
+     * @param user        пользователь-владелец
+     * @param props       множество столбцов таблицы
+     * @param defs        множество определений объектов схемы
+     */
     public static void parseSchemaProperties(JSONObject schema,
         Table parentTable, List<Table> tables, List<Column> columns, User user,
         JSONObject props, JSONObject defs)
@@ -115,6 +164,12 @@ public class SchemaUtils
         }
     }
 
+    /**
+     * Загрузка JSON-схемы из файла
+     * 
+     * @param path путь к файлу
+     * @return     JSON-схема
+     */
     public static JSONObject getJson(String path)
     {
         try
@@ -134,6 +189,11 @@ public class SchemaUtils
         }
     }
 
+    /**
+     * Разбор JSON-схемы на таблицы и столбцы
+     * 
+     * @param path путь к файлу JSON-схемы
+     */
     public static void parseJsonSchema(String path)
     {
         JSONObject schema = getJson(path);
@@ -151,12 +211,10 @@ public class SchemaUtils
 
         parseSchemaProperties(schema, rootTable, tables, columns, user,
             properties, defs);
-        /*for (Table t : tables)
-            System.out.print(t.getName() + " ");
-
-        System.out.println();
-
-        for (Column c : columns)
-            System.out.print(c.getName() + " ");*/
+        /*
+         * for (Table t : tables) System.out.print(t.getName() + " ");
+         * System.out.println(); for (Column c : columns)
+         * System.out.print(c.getName() + " ");
+         */
     }
 }
