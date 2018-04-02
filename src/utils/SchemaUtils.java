@@ -1,5 +1,5 @@
 package utils;
-
+ 
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,10 +29,10 @@ public class SchemaUtils
     }
 
     /**
-     * Берет имя таблицы из пути к файлу схемы
+     * ГЃГҐГ°ГҐГІ ГЁГ¬Гї ГІГ ГЎГ«ГЁГ¶Г» ГЁГ§ ГЇГіГІГЁ ГЄ ГґГ Г©Г«Гі Г±ГµГҐГ¬Г»
      * 
-     * @param path путь к файлу
-     * @return     имя таблицы
+     * @param path ГЇГіГІГј ГЄ ГґГ Г©Г«Гі
+     * @return     ГЁГ¬Гї ГІГ ГЎГ«ГЁГ¶Г»
      */
     public static String getTableName(String path)
     {
@@ -45,10 +45,10 @@ public class SchemaUtils
     }
 
     /**
-     * Преобразует названия к lowerCamelCase
+     * ГЏГ°ГҐГ®ГЎГ°Г Г§ГіГҐГІ Г­Г Г§ГўГ Г­ГЁГї ГЄ lowerCamelCase
      * 
-     * @param str название
-     * @return    форматированное название
+     * @param str Г­Г Г§ГўГ Г­ГЁГҐ
+     * @return    ГґГ®Г°Г¬Г ГІГЁГ°Г®ГўГ Г­Г­Г®ГҐ Г­Г Г§ГўГ Г­ГЁГҐ
      */
     public static String formatName(String str)
     {
@@ -62,14 +62,14 @@ public class SchemaUtils
     }
 
     /**
-     * Создает объект столбца таблицы, заполняет его данными и добавляет в
-     * список столбцов
+     * Г‘Г®Г§Г¤Г ГҐГІ Г®ГЎГєГҐГЄГІ Г±ГІГ®Г«ГЎГ¶Г  ГІГ ГЎГ«ГЁГ¶Г», Г§Г ГЇГ®Г«Г­ГїГҐГІ ГҐГЈГ® Г¤Г Г­Г­Г»Г¬ГЁ ГЁ Г¤Г®ГЎГ ГўГ«ГїГҐГІ Гў
+     * Г±ГЇГЁГ±Г®ГЄ Г±ГІГ®Г«ГЎГ¶Г®Гў
      * 
-     * @param parentTable таблица-владелец
-     * @param columns     список столбцов
-     * @param name        название столбца
-     * @param colData     данные о столбце
-     * @return            экземпляр столбца с данными
+     * @param parentTable ГІГ ГЎГ«ГЁГ¶Г -ГўГ«Г Г¤ГҐГ«ГҐГ¶
+     * @param columns     Г±ГЇГЁГ±Г®ГЄ Г±ГІГ®Г«ГЎГ¶Г®Гў
+     * @param name        Г­Г Г§ГўГ Г­ГЁГҐ Г±ГІГ®Г«ГЎГ¶Г 
+     * @param colData     Г¤Г Г­Г­Г»ГҐ Г® Г±ГІГ®Г«ГЎГ¶ГҐ
+     * @return            ГЅГЄГ§ГҐГ¬ГЇГ«ГїГ° Г±ГІГ®Г«ГЎГ¶Г  Г± Г¤Г Г­Г­Г»Г¬ГЁ
      */
     public static Column handleColumn(Table parentTable, List<Column> columns,
         String name, JSONObject colData)
@@ -84,13 +84,13 @@ public class SchemaUtils
     }
 
     /**
-     * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
+     * Г‘Г®Г§Г¤Г ГҐГІ Г®ГЎГєГҐГЄГІ ГІГ ГЎГ«ГЁГ¶Г», Г§Г ГЇГ®Г«Г­ГїГҐГІ ГҐГЈГ® Г¤Г Г­Г­Г»Г¬ГЁ ГЁ Г¤Г®ГЎГ ГўГ«ГїГҐГІ Гў Г±ГЇГЁГ±Г®ГЄ ГІГ ГЎГ«ГЁГ¶
      * 
-     * @param name    имя таблицы
-     * @param user    пользователь-владелец
-     * @param tabData данные о таблице
-     * @param tables  список таблиц
-     * @return        экземпляр таблицы с данными
+     * @param name    ГЁГ¬Гї ГІГ ГЎГ«ГЁГ¶Г»
+     * @param user    ГЇГ®Г«ГјГ§Г®ГўГ ГІГҐГ«Гј-ГўГ«Г Г¤ГҐГ«ГҐГ¶
+     * @param tabData Г¤Г Г­Г­Г»ГҐ Г® ГІГ ГЎГ«ГЁГ¶ГҐ
+     * @param tables  Г±ГЇГЁГ±Г®ГЄ ГІГ ГЎГ«ГЁГ¶
+     * @return        ГЅГЄГ§ГҐГ¬ГЇГ«ГїГ° ГІГ ГЎГ«ГЁГ¶Г» Г± Г¤Г Г­Г­Г»Г¬ГЁ
      */
     public static Table handleTable(String name, User user, JSONObject tabData,
         List<Table> tables)
@@ -106,11 +106,11 @@ public class SchemaUtils
 
     // props -> infinite loop
     /**
-     * Поиск значения ключа по заданной ссылке
+     * ГЏГ®ГЁГ±ГЄ Г§Г­Г Г·ГҐГ­ГЁГї ГЄГ«ГѕГ·Г  ГЇГ® Г§Г Г¤Г Г­Г­Г®Г© Г±Г±Г»Г«ГЄГҐ
      * 
-     * @param path путь
-     * @param obj  область поиска
-     * @return     значение ключа по ссылке
+     * @param path ГЇГіГІГј
+     * @param obj  Г®ГЎГ«Г Г±ГІГј ГЇГ®ГЁГ±ГЄГ 
+     * @return     Г§Г­Г Г·ГҐГ­ГЁГҐ ГЄГ«ГѕГ·Г  ГЇГ® Г±Г±Г»Г«ГЄГҐ
      */
     public static JSONObject findDef(String path, JSONObject obj)
     {
@@ -126,15 +126,15 @@ public class SchemaUtils
     }
 
     /**
-     * Разбор пар в properties на столбцы и таблицы
+     * ГђГ Г§ГЎГ®Г° ГЇГ Г° Гў properties Г­Г  Г±ГІГ®Г«ГЎГ¶Г» ГЁ ГІГ ГЎГ«ГЁГ¶Г»
      * 
-     * @param schema      корневая JSON-схема
-     * @param parentTable таблица-владелец
-     * @param tables      список таблиц
-     * @param columns     список столбцов
-     * @param user        пользователь-владелец
-     * @param props       множество столбцов таблицы
-     * @param defs        множество определений объектов схемы
+     * @param schema      ГЄГ®Г°Г­ГҐГўГ Гї JSON-Г±ГµГҐГ¬Г 
+     * @param parentTable ГІГ ГЎГ«ГЁГ¶Г -ГўГ«Г Г¤ГҐГ«ГҐГ¶
+     * @param tables      Г±ГЇГЁГ±Г®ГЄ ГІГ ГЎГ«ГЁГ¶
+     * @param columns     Г±ГЇГЁГ±Г®ГЄ Г±ГІГ®Г«ГЎГ¶Г®Гў
+     * @param user        ГЇГ®Г«ГјГ§Г®ГўГ ГІГҐГ«Гј-ГўГ«Г Г¤ГҐГ«ГҐГ¶
+     * @param props       Г¬Г­Г®Г¦ГҐГ±ГІГўГ® Г±ГІГ®Г«ГЎГ¶Г®Гў ГІГ ГЎГ«ГЁГ¶Г»
+     * @param defs        Г¬Г­Г®Г¦ГҐГ±ГІГўГ® Г®ГЇГ°ГҐГ¤ГҐГ«ГҐГ­ГЁГ© Г®ГЎГєГҐГЄГІГ®Гў Г±ГµГҐГ¬Г»
      */
     public static void parseSchemaProperties(JSONObject schema,
         Table parentTable, List<Table> tables, List<Column> columns, User user,
@@ -165,10 +165,10 @@ public class SchemaUtils
     }
 
     /**
-     * Загрузка JSON-схемы из файла
+     * Г‡Г ГЈГ°ГіГ§ГЄГ  JSON-Г±ГµГҐГ¬Г» ГЁГ§ ГґГ Г©Г«Г 
      * 
-     * @param path путь к файлу
-     * @return     JSON-схема
+     * @param path ГЇГіГІГј ГЄ ГґГ Г©Г«Гі
+     * @return     JSON-Г±ГµГҐГ¬Г 
      */
     public static JSONObject getJson(String path)
     {
@@ -190,9 +190,9 @@ public class SchemaUtils
     }
 
     /**
-     * Разбор JSON-схемы на таблицы и столбцы
+     * ГђГ Г§ГЎГ®Г° JSON-Г±ГµГҐГ¬Г» Г­Г  ГІГ ГЎГ«ГЁГ¶Г» ГЁ Г±ГІГ®Г«ГЎГ¶Г»
      * 
-     * @param path путь к файлу JSON-схемы
+     * @param path ГЇГіГІГј ГЄ ГґГ Г©Г«Гі JSON-Г±ГµГҐГ¬Г»
      */
     public static void parseJsonSchema(String path)
     {
