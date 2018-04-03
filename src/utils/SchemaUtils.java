@@ -29,10 +29,10 @@ public class SchemaUtils
     }
 
     /**
-     * Берет имя таблицы из пути к файлу схемы
+     * Áåðåò èìÿ òàáëèöû èç ïóòè ê ôàéëó ñõåìû
      * 
-     * @param path путь к файлу
-     * @return     имя таблицы
+     * @param path ïóòü ê ôàéëó
+     * @return     èìÿ òàáëèöû
      */
     public static String getTableName(String path)
     {
@@ -45,10 +45,10 @@ public class SchemaUtils
     }
 
     /**
-     * Преобразует строки к lowerCamelCase
+     * Ïðåîáðàçóåò íàçâàíèÿ ê lowerCamelCase
      * 
-     * @param str строка
-     * @return    форматированная строка
+     * @param str íàçâàíèå
+     * @return    ôîðìàòèðîâàííîå íàçâàíèå
      */
     public static String formatName(String str)
     {
@@ -62,14 +62,14 @@ public class SchemaUtils
     }
 
     /**
-     * Создает объект столбца таблицы, заполняет его данными и добавляет 
-     * в список столбцов
+     * Ñîçäàåò îáúåêò ñòîëáöà òàáëèöû, çàïîëíÿåò åãî äàííûìè è äîáàâëÿåò â
+     * ñïèñîê ñòîëáöîâ
      * 
-     * @param parentTable таблица-владелец
-     * @param columns     список столбцов
-     * @param name        название столбца
-     * @param colData     данные о столбце
-     * @return            экземпляр столбца с данными
+     * @param parentTable òàáëèöà-âëàäåëåö
+     * @param columns     ñïèñîê ñòîëáöîâ
+     * @param name        íàçâàíèå ñòîëáöà
+     * @param colData     äàííûå î ñòîëáöå
+     * @return            ýêçåìïëÿð ñòîëáöà ñ äàííûìè
      */
     public static Column handleColumn(Table parentTable, List<Column> columns,
         String name, JSONObject colData)
@@ -84,13 +84,13 @@ public class SchemaUtils
     }
 
     /**
-     * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
+     * Ñîçäàåò îáúåêò òàáëèöû, çàïîëíÿåò åãî äàííûìè è äîáàâëÿåò â ñïèñîê òàáëèö
      * 
-     * @param name    имя таблицы
-     * @param user    пользователь-владелец
-     * @param tabData данные о таблице
-     * @param tables  список таблиц
-     * @return        экземпляр таблицы с данными
+     * @param name    èìÿ òàáëèöû
+     * @param user    ïîëüçîâàòåëü-âëàäåëåö
+     * @param tabData äàííûå î òàáëèöå
+     * @param tables  ñïèñîê òàáëèö
+     * @return        ýêçåìïëÿð òàáëèöû ñ äàííûìè
      */
     public static Table handleTable(String name, User user, JSONObject tabData,
         List<Table> tables)
@@ -106,11 +106,11 @@ public class SchemaUtils
 
     // props -> infinite loop
     /**
-     * Поиск значения ключа по заданной ссылке
+     * Ïîèñê çíà÷åíèÿ êëþ÷à ïî çàäàííîé ññûëêå
      * 
-     * @param path ссылка
-     * @param obj  область поиска
-     * @return     значение ключа по ссылке
+     * @param path ïóòü
+     * @param obj  îáëàñòü ïîèñêà
+     * @return     çíà÷åíèå êëþ÷à ïî ññûëêå
      */
     public static JSONObject findDef(String path, JSONObject obj)
     {
@@ -126,15 +126,15 @@ public class SchemaUtils
     }
 
     /**
-     * Разбор пар в properties на столбцы и таблицы
+     * Ðàçáîð ïàð â properties íà ñòîëáöû è òàáëèöû
      * 
-     * @param schema      корневая JSON-схема
-     * @param parentTable таблица-владелец
-     * @param tables      список таблиц
-     * @param columns     список столбцов
-     * @param user        пользователь-владелец
-     * @param props       множество столбцов таблицы
-     * @param defs        множество определений объектов схемы
+     * @param schema      êîðíåâàÿ JSON-ñõåìà
+     * @param parentTable òàáëèöà-âëàäåëåö
+     * @param tables      ñïèñîê òàáëèö
+     * @param columns     ñïèñîê ñòîëáöîâ
+     * @param user        ïîëüçîâàòåëü-âëàäåëåö
+     * @param props       ìíîæåñòâî ñòîëáöîâ òàáëèöû
+     * @param defs        ìíîæåñòâî îïðåäåëåíèé îáúåêòîâ ñõåìû
      */
     public static void parseSchemaProperties(JSONObject schema,
         Table parentTable, List<Table> tables, List<Column> columns, User user,
@@ -165,10 +165,10 @@ public class SchemaUtils
     }
 
     /**
-     * Загрузка JSON-схемы из файла
+     * Çàãðóçêà JSON-ñõåìû èç ôàéëà
      * 
-     * @param path путь к файлу
-     * @return     JSON-схема
+     * @param path ïóòü ê ôàéëó
+     * @return     JSON-ñõåìà
      */
     public static JSONObject getJson(String path)
     {
@@ -190,9 +190,9 @@ public class SchemaUtils
     }
 
     /**
-     * Разбор JSON-схемы на таблицы и столбцы
+     * Ðàçáîð JSON-ñõåìû íà òàáëèöû è ñòîëáöû
      * 
-     * @param path путь к файлу JSON-схемы
+     * @param path ïóòü ê ôàéëó JSON-ñõåìû
      */
     public static void parseJsonSchema(String path)
     {
