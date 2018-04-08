@@ -5,10 +5,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONStreamAware;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -17,16 +20,10 @@ import model.Table;
 import model.User;
 
 
+
 public class SchemaUtils
 {
     public static final String USER_NAME = "JSON";
-
-    public static String firstUpperCase(String word)
-    {
-        if (word == null || word.isEmpty())
-            return "";
-        return word.substring(0, 1).toUpperCase() + word.substring(1);
-    }
 
     /**
      * Берет имя таблицы из пути к файлу схемы
@@ -45,23 +42,6 @@ public class SchemaUtils
     }
 
     /**
-     * Преобразует строки к lowerCamelCase
-     * 
-     * @param str строка
-     * @return    форматированная строка
-     */
-    public static String formatName(String str)
-    {
-        if (str.isEmpty())
-            return "";
-        String[] parts = str.trim().split("[-_. ]");
-        StringBuilder finStr = new StringBuilder(parts[0]);
-        for (int i = 1; i < parts.length; i++)
-            finStr.append(firstUpperCase(parts[i]));
-        return finStr.toString();
-    }
-
-    /**
      * Создает объект столбца таблицы, заполняет его данными и добавляет 
      * в список столбцов
      * 
@@ -71,15 +51,16 @@ public class SchemaUtils
      * @param colData     данные о столбце
      * @return            экземпляр столбца с данными
      */
-    public static Column handleColumn(Table parentTable, List<Column> columns,
+    public static Column handleColumn(Table parentTable, /*List<Column> columns*/Map<String, List<Column>> tableColumns,
         String name, JSONObject colData)
     {
         Column newCol = new Column();
-        newCol.setName(formatName(name));
+        newCol.setName(name);
         newCol.setType((String) colData.get("type"));
         newCol.setComment((String) colData.get("description"));
         newCol.setTable(parentTable);
-        columns.add(newCol);
+        //columns.add(newCol);
+        tableColumns.get(parentTable.getName()).add(newCol);
         return newCol;
     }
 
@@ -93,14 +74,15 @@ public class SchemaUtils
      * @return        экземпляр таблицы с данными
      */
     public static Table handleTable(String name, User user, JSONObject tabData,
-        List<Table> tables)
+        /*List<Table>*/Map<String, Table> tables, Map<String, List<Column>> tableColumns)
     {
         Table newTable = new Table();
-        newTable.setName(formatName(name));
+        newTable.setName(name);
         newTable.setType(Table.TYPE_TABLE);
         newTable.setOwner(user);
         newTable.setComment((String) tabData.get("description"));
-        tables.add(newTable);
+        tables.put(name, newTable);
+        tableColumns.put(name, new LinkedList<Column>());
         return newTable;
     }
 
@@ -112,16 +94,19 @@ public class SchemaUtils
      * @param obj  область поиска
      * @return     значение ключа по ссылке
      */
-    public static JSONObject findDef(String path, JSONObject obj)
+    public static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
     {
         if (path == null || path.isEmpty())
             return null;
         if (path.indexOf("/") == -1)
-            return (JSONObject) obj.get(path);
+            if(obj.containsKey("$ref"))
+                return findDef((String) obj.get("$ref"), defs, defs);
+            else
+                return (JSONObject) obj.get(path);
         if (path.substring(0, 1).equals("#"))
-            return findDef(path.substring(path.indexOf("/") + 1), obj);
+            return findDef(path.substring(path.indexOf("/") + 1), defs, obj);
         else
-            return findDef(path.substring(path.indexOf("/") + 1),
+            return findDef(path.substring(path.indexOf("/") + 1), defs,
                 (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
     }
 
@@ -137,8 +122,8 @@ public class SchemaUtils
      * @param defs        множество определений объектов схемы
      */
     public static void parseSchemaProperties(JSONObject schema,
-        Table parentTable, List<Table> tables, List<Column> columns, User user,
-        JSONObject props, JSONObject defs)
+        Table parentTable, /*List<Table>*/Map<String, Table> tables, /*List<Column> columns*/Map<String, List<Column>> tableColumns, 
+        User user, JSONObject props, JSONObject defs)
     {
         for (Object keyObj : props.keySet())
         {
@@ -147,18 +132,18 @@ public class SchemaUtils
             Column newCol;
 
             if (colData.containsKey("$ref"))
-                newCol = handleColumn(parentTable, columns, key,
-                    findDef((String) colData.get("$ref"), schema));
+                newCol = handleColumn(parentTable, /*columns*/tableColumns, key,
+                    findDef((String) colData.get("$ref"), (JSONObject)schema.get("definitions"), schema));
             else
-                newCol = handleColumn(parentTable, columns, key, colData);
-
+                newCol = handleColumn(parentTable, /*columns*/tableColumns, key, colData);
+            
             if (newCol.getType().equals("object"))
             {
                 if (colData.containsKey("$ref"))
-                    colData = findDef((String) colData.get("$ref"), schema);
-                Table newTable = handleTable(key, user, colData, tables);
+                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);
+                Table newTable = handleTable(key, user, colData, tables, tableColumns);
 
-                parseSchemaProperties(schema, newTable, tables, columns, user,
+                parseSchemaProperties(schema, newTable, tables, /*columns*/tableColumns, user,
                     (JSONObject) colData.get("properties"), defs);
             }
         }
@@ -189,32 +174,15 @@ public class SchemaUtils
         }
     }
 
-    /**
-     * Разбор JSON-схемы на таблицы и столбцы
-     * 
-     * @param path путь к файлу JSON-схемы
-     */
-    public static void parseJsonSchema(String path)
+    public List<String> getColumns(Table currTable, Map<String, Table> tables, JSONObject json, Table t/*, List<String> cols*/)
     {
-        JSONObject schema = getJson(path);
-
-        LinkedList<Table> tables = new LinkedList<Table>();
-        LinkedList<Column> columns = new LinkedList<Column>();
-
-        User user = new User();
-        user.setName(USER_NAME);
-
-        Table rootTable = handleTable(getTableName(path), user, schema, tables);
-
-        JSONObject properties = (JSONObject) schema.get("properties");
-        JSONObject defs = (JSONObject) schema.get("definitions");
-
-        parseSchemaProperties(schema, rootTable, tables, columns, user,
-            properties, defs);
-        /*
-         * for (Table t : tables) System.out.print(t.getName() + " ");
-         * System.out.println(); for (Column c : columns)
-         * System.out.print(c.getName() + " ");
-         */
+        List<String> cols = new LinkedList<String>();
+        cols.add("x"); 
+        cols.add("y");
+        t = tables.get("extent");
+        
+        
+        //for each jsonobject in jsonarray get cols values
+        return null;
     }
 }
