@@ -4,6 +4,7 @@ import java.util.List;
 import org.json.simple.JSONObject;
 
 import model.Column;
+import model.Table;
 import utils.SchemaUtils;
 
 public class Main
@@ -11,21 +12,21 @@ public class Main
     public static void main(String args[])
     {
         String s_path = "e:\\address.json";    
-        //SchemaUtils.parseJsonSchema(s_path);
         JSONSchema s =  new JSONSchema(SchemaUtils.getTableName(s_path), SchemaUtils.getJson(s_path));
-        //s.parseJsonSchema();
-        //System.out.println(s.getName());
-        //Column p = s.getColumns("street-address").get(0);
-        List<String> paths = new LinkedList<String>();
-       // s.buildPath(new StringBuilder(""), p, paths);
-        /*for(String str: paths)
-            System.out.println(str);*/
         
-        Column pp = s.getColumns("first-name").get(0);
+        List<String> paths = new LinkedList<String>();
+
+        //Column pp = s.getColumns("first-name").get(0);
         
         JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
-        JSONTableFetcher.buildPaths(s, pp, paths);
+        
+        JSONSchemaParser.buildColumnPaths(s, s.getColumns("extended-address").get(0), paths);
+        JSONSchemaParser.buildAndMatchAllPaths(s, s.getColumns("first-name").get(0), s.getColumns("street-address").get(0));
         for(String path : paths)
-            System.out.println(path + "   " + JSONTableFetcher.getToColumn("first-name", path, obj));
+            if(JSONSchemaParser.checkPath(s.getColumns("extended-address").get(0), s, path))
+                System.out.println(path + "   " + JSONTableFetcher.getColumnData("extended-address", path, obj));
+            else System.out.println("failed");
+        
+              
     }
 }

@@ -31,55 +31,17 @@ public class JSONTableFetcher implements TableFetcher
      * @param obj  JSONобъект
      * @return     значение столбца
      */
-    public static String getToColumn(String name, String path, JSONObject obj)
+    public static String getColumnData(String name, String path, JSONObject obj)
     {
         JSONObject curr = (JSONObject)obj.clone();
-        String[] nodes = path.replaceFirst("^/", "").split("/", 0);
-        for(String s : nodes)
-            curr = (JSONObject)curr.get(s);
-        return (String)curr.get(name);
-    }
-
-    /**
-     * Производит построение всех возможных путей до столбца с заданным родителем
-     * @param schema JSON-схема
-     * @param c      столбец
-     * @param paths  список возможных путей
-     * @return       список возможных путей
-     */
-    public static List<String> buildPaths(JSONSchema schema, Column c, List<String> paths)
-    {
-       buildPath(schema, "", c, paths);
-       return paths;
-    }
-    
-    /**
-     * Рекурсивно строит путь к столбцу
-     * @param schema JSON-схема
-     * @param path   текущий путь
-     * @param c      текущий столбец
-     * @param paths  список возможных путей
-     * @return       путь к столбцу
-     */
-    public static String buildPath(JSONSchema schema, String path, Column c, List<String> paths)
-    {
-        Table parentTable = c.getTable(); 
-        List<Column> possible = schema.getColumns(parentTable.getName());
-        
-        StringBuilder currPath = new StringBuilder("" + path); 
-        if(!path.equals(""))
-            currPath.insert(0, c.getName());
-        currPath.insert(0, "/");
-        if (possible == null)
+        if(!path.trim().equals("/"))
         {
-            paths.add(currPath.toString());
-            return ""; 
+            String[] nodes = path.replaceFirst("^/", "").split("/", -1);
+            for(String s : nodes)
+                curr = (JSONObject)curr.get(s);
         }
-        else
-            for(Column col : possible)
-                currPath.insert(0, buildPath(schema, currPath.toString(), col, paths)); 
-        return "";
-    }
+        return (String)curr.get(name);
+    }    
     
     /*public List<String> getColumns(JSONSchema schema, JSONObject json, {Table t,} List<String> cols)
     {
