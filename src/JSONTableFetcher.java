@@ -8,60 +8,76 @@ import org.json.simple.JSONObject;
 import model.Column;
 import model.Table;
 
+/**
+ * @author MM
+ *
+ */
 public class JSONTableFetcher implements TableFetcher
 {
     public List<Table> getTables(JSONSchema schema)
     {
-        return null;
-        //return schema.getTables();
+        return schema.getListedTables();
     }
+    
     public List<Column> getColumns(JSONSchema schema)
     {
-        //return schema.getColumns();
-        return null;
+        return schema.getListedColumns();
     }
-    public List<Column> getAllColumns(JSONSchema schema)
-    {
-        //return schema.getColumns();
-        return null;
-    }
-    //+
+       
+    /**
+     * Берет значение из столбца по указанному пути
+     * @param name имя столбца
+     * @param path путь к столбцу
+     * @param obj  JSONобъект
+     * @return     значение столбца
+     */
     public static String getToColumn(String name, String path, JSONObject obj)
     {
         JSONObject curr = (JSONObject)obj.clone();
-        String[] nodes = path.split("/");
+        String[] nodes = path.replaceFirst("^/", "").split("/", 0);
         for(String s : nodes)
-        {
             curr = (JSONObject)curr.get(s);
-        }
         return (String)curr.get(name);
     }
-    //+
+
+    /**
+     * Производит построение всех возможных путей до столбца с заданным родителем
+     * @param schema JSON-схема
+     * @param c      столбец
+     * @param paths  список возможных путей
+     * @return       список возможных путей
+     */
     public static List<String> buildPaths(JSONSchema schema, Column c, List<String> paths)
     {
-       buildPath(schema, new StringBuilder(""), c, paths);
+       buildPath(schema, "", c, paths);
        return paths;
     }
-    //+
-    public static String buildPath(JSONSchema schema, StringBuilder sb, Column c, List<String> paths)
+    
+    /**
+     * Рекурсивно строит путь к столбцу
+     * @param schema JSON-схема
+     * @param path   текущий путь
+     * @param c      текущий столбец
+     * @param paths  список возможных путей
+     * @return       путь к столбцу
+     */
+    public static String buildPath(JSONSchema schema, String path, Column c, List<String> paths)
     {
         Table parentTable = c.getTable(); 
         List<Column> possible = schema.getColumns(parentTable.getName());
-
+        
+        StringBuilder currPath = new StringBuilder("" + path); 
+        if(!path.equals(""))
+            currPath.insert(0, c.getName());
+        currPath.insert(0, "/");
         if (possible == null)
         {
-            sb.insert(0, c.getName());
-            paths.add(sb.toString());
-            sb.setLength(0);            
+            paths.add(currPath.toString());
             return ""; 
         }
         else
             for(Column col : possible)
-            {
-                //sb.insert(0, c.getName());
-                sb.insert(0, "/");
-                sb.insert(0, buildPath(schema, sb, col, paths));                
-            }
+                currPath.insert(0, buildPath(schema, currPath.toString(), col, paths)); 
         return "";
     }
     
