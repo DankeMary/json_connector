@@ -40,28 +40,27 @@ public class JSONSchema
         tables = new HashMap<String, Table>();
         columns = new HashMap<String, List<Column>>();
         tableColumns = new HashMap<String, List<Column>>();
-        parseJsonSchema();
+        parse();
     }
     
-    public void parseJsonSchema()
+    public void parse()
     {       
         User user = new User();
         user.setName(USER_NAME);
 
-        Table rootTable = handleTable(name, user, schema, tables, tableColumns);
+        Table rootTable = handleTable(name, user, schema);
 
         JSONObject properties = (JSONObject) schema.get("properties");
         JSONObject defs = (JSONObject) schema.get("definitions");
 
-        parseSchemaProperties(schema, rootTable, tables, columns, tableColumns, user,
-            properties, defs);
+        parseProperties(rootTable, user, properties, defs);
         
-        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
-        }         
+        }   */      
     }
     
     /**
@@ -75,9 +74,7 @@ public class JSONSchema
      * @param props       множество столбцов таблицы
      * @param defs        множество определений объектов схемы
      */
-    public static void parseSchemaProperties(JSONObject schema,
-        Table parentTable, /*List<Table>*/Map<String, Table> tables, Map<String, List<Column>> columns, Map<String, List<Column>> tableColumns, 
-        User user, JSONObject props, JSONObject defs)
+    private void parseProperties(Table parentTable, User user, JSONObject props, JSONObject defs)
     {
         for (Object keyObj : props.keySet())
         {
@@ -86,25 +83,22 @@ public class JSONSchema
             Column newCol;
 
             if (colData.containsKey("$ref"))
-                newCol = handleColumn(parentTable, columns, tableColumns, key,
-                    findDef((String) colData.get("$ref"), (JSONObject)schema.get("definitions"), schema));
+                newCol = handleColumn(parentTable, key, findDef((String) colData.get("$ref"), (JSONObject)schema.get("definitions"), schema));
             else
-                newCol = handleColumn(parentTable, columns, tableColumns, key, colData);
+                newCol = handleColumn(parentTable, key, colData);
             
             if (newCol.getType().equals("object"))
             {
                 if (colData.containsKey("$ref"))
                     colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);
-                Table newTable = handleTable(key, user, colData, tables, tableColumns);
+                Table newTable = handleTable(key, user, colData);
 
-                parseSchemaProperties(schema, newTable, tables, columns, tableColumns, user,
-                    (JSONObject) colData.get("properties"), defs);
+                parseProperties(newTable, user, (JSONObject) colData.get("properties"), defs);
             }
         }
     }
     
-    public static Column handleColumn(Table parentTable, Map<String, List<Column>> columns, Map<String, List<Column>> tableColumns,
-        String name, JSONObject colData)
+    private Column handleColumn(Table parentTable, String name, JSONObject colData)
     {
         Column newCol = new Column();
         newCol.setName(name);
@@ -126,29 +120,26 @@ public class JSONSchema
      * @param name    имя таблицы
      * @param user    пользователь-владелец
      * @param tabData данные о таблице
-     * @param tables  список таблиц
      * @return        экземпляр таблицы с данными
      */
-    public static Table handleTable(String name, User user, JSONObject tabData,
-        /*List<Table>*/Map<String, Table> tables, Map<String, List<Column>> tableColumns)
+    private Table handleTable(String name, User user, JSONObject tabData)
     {
-        Table newTable = new Table();
-        newTable.setName(name);
-        newTable.setType(Table.TYPE_TABLE);
-        newTable.setOwner(user);
-        newTable.setComment((String) tabData.get("description"));
-        if(!tables.containsKey(name))
+      //Mind this!
+        if(tables.containsKey(name))
+             return tables.get(name);
+        else
         {
+            Table newTable = new Table();
+            newTable.setName(name);
+            newTable.setType(Table.TYPE_TABLE);
+            newTable.setOwner(user);
+            newTable.setComment((String) tabData.get("description"));
             tables.put(name, newTable);
             tableColumns.put(name, new LinkedList<Column>());
             return newTable;
-        }      
-        //Mind this!
-        else
-            return tables.get(name);
+        }     
     }
 
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     /**
      * Поиск значения ключа по заданной ссылке
      * 
@@ -156,7 +147,7 @@ public class JSONSchema
      * @param obj  область поиска
      * @return     значение ключа по ссылке
      */
-    public static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
+    private JSONObject findDef(String path, JSONObject defs, JSONObject obj)
     {
         if (path == null || path.isEmpty())
             return null;
@@ -171,6 +162,8 @@ public class JSONSchema
             return findDef(path.substring(path.indexOf("/") + 1), defs,
                 (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
     }
+    
+    //getters & setters
     public String getName()
     {
         return name;
@@ -196,16 +189,33 @@ public class JSONSchema
         return tables;
     }
 
-    public void setTables(Map<String, Table> tables)
+    public List<Table> getListedTables()
+    {
+        List<Table> res = new LinkedList<Table>();
+        for (Table t : tables.values())    
+            res.add(t);        
+        return res;
+    }
+    
+    /*public void setTables(Map<String, Table> tables)
     {
         this.tables = tables;
-    }
+    }*/
 
     public Map<String, List<Column>> getColumns()
-    {
-        
+    {        
         return columns;
     }
+    
+    public List<Column> getListedColumns()
+    {
+        List<Column> res = new LinkedList<Column>();
+        
+        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet())            
+            res.addAll(entry.getValue());
+        return res;
+    }
+    
     
     public List<Column> getColumns(Table t)
     {
@@ -222,10 +232,8 @@ public class JSONSchema
         return tableColumns;
     }
 
-    public void setTableColumns(Map<String, List<Column>> tableColumns)
+    /*public void setTableColumns(Map<String, List<Column>> tableColumns)
     {
         this.tableColumns = tableColumns;
-    }
-
-    
+    }*/    
 }
