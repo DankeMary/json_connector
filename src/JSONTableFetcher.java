@@ -37,13 +37,13 @@ public class JSONTableFetcher implements TableFetcher
         return (String)curr.get(name);
     }
     //+
-    public List<String> buildPaths(JSONSchema schema, Column c, List<String> paths)
+    public static List<String> buildPaths(JSONSchema schema, Column c, List<String> paths)
     {
        buildPath(schema, new StringBuilder(""), c, paths);
        return paths;
     }
     //+
-    public String buildPath(JSONSchema schema, StringBuilder sb, Column c, List<String> paths)
+    public static String buildPath(JSONSchema schema, StringBuilder sb, Column c, List<String> paths)
     {
         Table parentTable = c.getTable(); 
         List<Column> possible = schema.getColumns(parentTable.getName());

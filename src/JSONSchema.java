@@ -43,7 +43,7 @@ public class JSONSchema
         parseJsonSchema();
     }
     
-    private void parseJsonSchema()
+    public void parseJsonSchema()
     {       
         User user = new User();
         user.setName(USER_NAME);
@@ -56,15 +56,12 @@ public class JSONSchema
         parseSchemaProperties(schema, rootTable, tables, columns, tableColumns, user,
             properties, defs);
         
-        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
-            {
                 System.out.println("    " + c.getName());
-            }
-        }*/
-         
+        }         
     }
     
     /**
@@ -140,12 +137,18 @@ public class JSONSchema
         newTable.setType(Table.TYPE_TABLE);
         newTable.setOwner(user);
         newTable.setComment((String) tabData.get("description"));
-        tables.put(name, newTable);
-        tableColumns.put(name, new LinkedList<Column>());
-        return newTable;
+        if(!tables.containsKey(name))
+        {
+            tables.put(name, newTable);
+            tableColumns.put(name, new LinkedList<Column>());
+            return newTable;
+        }      
+        //Mind this!
+        else
+            return tables.get(name);
     }
 
-    // props -> infinite loop
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     /**
      * Поиск значения ключа по заданной ссылке
      * 

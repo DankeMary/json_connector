@@ -13,6 +13,7 @@ public class Main
         String s_path = "e:\\address.json";    
         //SchemaUtils.parseJsonSchema(s_path);
         JSONSchema s =  new JSONSchema(SchemaUtils.getTableName(s_path), SchemaUtils.getJson(s_path));
+        //s.parseJsonSchema();
         //System.out.println(s.getName());
         //Column p = s.getColumns("street-address").get(0);
         List<String> paths = new LinkedList<String>();
@@ -23,8 +24,8 @@ public class Main
         Column pp = s.getColumns("first-name").get(0);
         
         JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
-        s.buildPath(new StringBuilder(""), pp, paths);
+        JSONTableFetcher.buildPaths(s, pp, paths);
         for(String path : paths)
-            System.out.println(JSONTableFetcher.getToColumn("first-name", path, obj));
+            System.out.println(path + "   " + JSONTableFetcher.getToColumn("first-name", path, obj));
     }
 }
