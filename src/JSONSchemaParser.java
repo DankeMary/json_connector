@@ -27,6 +27,7 @@ public class JSONSchemaParser
         columns = objSchema.getColumns();
         tableColumns = objSchema.getTableColumns();
     }
+    
     public static void parse(JSONSchema objSchema)
     {   
         initSchema(objSchema);
@@ -83,13 +84,9 @@ public class JSONSchemaParser
     /**
      * Разбор пар в properties на столбцы и таблицы
      * 
-     * @param schema      корневая JSON-схема
      * @param parentTable таблица-владелец
-     * @param tables      список таблиц
-     * @param columns     список столбцов
      * @param user        пользователь-владелец
      * @param props       множество столбцов таблицы
-     * @param defs        множество определений объектов схемы
      */
     private static void parseProperties(Table parentTable, User user, JSONObject props)
     {
@@ -115,6 +112,14 @@ public class JSONSchemaParser
         }
     }
 
+    /**
+     * Создает объект столбца, заполняет его данными и добавляет в список столбцов
+     * 
+     * @param parentTable таблица-владелец
+     * @param name        имя столбца
+     * @param colData     данные о столбце
+     * @return            экземпляр столбца с данными
+     */
     private static Column handleColumn(Table parentTable, String name, JSONObject colData)
     {
         Column newCol = new Column();
@@ -159,7 +164,8 @@ public class JSONSchemaParser
      * Поиск значения ключа по заданной ссылке
      * 
      * @param path ссылка
-     * @param obj  область поиска
+     * @param defs определения столбцов
+     * @param obj  текущая область поиска
      * @return     значение ключа по ссылке
      */
     private static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
@@ -180,6 +186,7 @@ public class JSONSchemaParser
     
     /**
      * Производит построение всех возможных путей до столбца с заданным родителем
+     * 
      * @param schema JSON-схема
      * @param c      столбец
      * @param paths  список возможных путей
@@ -192,6 +199,12 @@ public class JSONSchemaParser
        return paths;
     }
     
+    /**
+     * Создает словарь путей, столбцы из одинаковой таблицы имеют один и тот же ключ
+     * 
+     * @param objSchema JSON-схема
+     * @param cols      искомые столбцы
+     */
     public static /*Map<String, List<Column>>*/void buildAndMatchAllPaths(JSONSchema objSchema, Column... cols)
     {
         Map<String, List<Column>> matchedPaths = new HashMap<String, List<Column>>();
@@ -210,6 +223,7 @@ public class JSONSchemaParser
     
     /**
      * Рекурсивно строит путь к столбцу
+     * 
      * @param schema JSON-схема
      * @param path   текущий путь
      * @param c      текущий столбец

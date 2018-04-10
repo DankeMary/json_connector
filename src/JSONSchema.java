@@ -15,9 +15,7 @@ public class JSONSchema
     private JSONObject schema;
     private Map<String, Table> tables;
     private Map<String, List<Column>> columns;
-    private Map<String, List<Column>> tableColumns;
-    
-     
+    private Map<String, List<Column>> tableColumns;     
 
     public JSONSchema()
     {
