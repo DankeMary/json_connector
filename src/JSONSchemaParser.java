@@ -97,15 +97,24 @@ public class JSONSchemaParser
             Column newCol;
 
             if (colData.containsKey("$ref"))
-                newCol = handleColumn(parentTable, key, findDef((String) colData.get("$ref"), (JSONObject)schema.get("definitions"), schema));
+            {
+                String path = (String) colData.get("$ref");
+                String name = path.substring(path.lastIndexOf("/") + 1);                
+                newCol = handleColumn(parentTable, name, findDef(path, (JSONObject)schema.get("definitions"), schema));
+            }
             else
                 newCol = handleColumn(parentTable, key, colData);
             
             if (newCol.getType().equals("object"))
             {
+                String name = key;
                 if (colData.containsKey("$ref"))
-                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);
-                Table newTable = handleTable(key, user, colData);
+                {
+                    String path = (String) colData.get("$ref");
+                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                    
+                    name = path.substring(path.lastIndexOf("/") + 1);
+                }
+                Table newTable = handleTable(name, user, colData);
                 handleColumn(newTable, "$id", "string", "");
                 
                 parseProperties(newTable, user, (JSONObject) colData.get("properties"));
