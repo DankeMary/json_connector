@@ -41,12 +41,12 @@ public class JSONSchemaParser
 
         parseProperties(rootTable, user, properties);
         
-        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
-        }   */      
+        }       
     }
     
     /**
@@ -111,8 +111,10 @@ public class JSONSchemaParser
                 if (colData.containsKey("$ref"))
                 {
                     String path = (String) colData.get("$ref");
-                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                    
                     name = path.substring(path.lastIndexOf("/") + 1);
+                    if (tables.containsKey(name))
+                        continue;
+                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                   
                 }
                 Table newTable = handleTable(name, user, colData);
                 handleColumn(newTable, "$id", "string", "");
