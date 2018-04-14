@@ -50,11 +50,11 @@ public class JSONSchemaParser
     }
     
     /**
-     * Проверяет, существует ли указанный путь и наличие столбца по нему
-     * @param c      искомый столбец
-     * @param schema JSON-схема
-     * @param path   путь
-     * @return       валидный/невалидный
+     * РџСЂРѕРІРµСЂСЏРµС‚, СЃСѓС‰РµСЃС‚РІСѓРµС‚ Р»Рё СѓРєР°Р·Р°РЅРЅС‹Р№ РїСѓС‚СЊ Рё РЅР°Р»РёС‡РёРµ СЃС‚РѕР»Р±С†Р° РїРѕ РЅРµРјСѓ
+     * @param c      РёСЃРєРѕРјС‹Р№ СЃС‚РѕР»Р±РµС†
+     * @param schema JSON-СЃС…РµРјР°
+     * @param path   РїСѓС‚СЊ
+     * @return       РІР°Р»РёРґРЅС‹Р№/РЅРµРІР°Р»РёРґРЅС‹Р№
      */
     public static boolean checkPath(Column c, JSONSchema objSchema, String path)
     {
@@ -82,11 +82,11 @@ public class JSONSchemaParser
     }
     
     /**
-     * Разбор пар в properties на столбцы и таблицы
+     * Р Р°Р·Р±РѕСЂ РїР°СЂ РІ properties РЅР° СЃС‚РѕР»Р±С†С‹ Рё С‚Р°Р±Р»РёС†С‹
      * 
-     * @param parentTable таблица-владелец
-     * @param user        пользователь-владелец
-     * @param props       множество столбцов таблицы
+     * @param parentTable С‚Р°Р±Р»РёС†Р°-РІР»Р°РґРµР»РµС†
+     * @param user        РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ-РІР»Р°РґРµР»РµС†
+     * @param props       РјРЅРѕР¶РµСЃС‚РІРѕ СЃС‚РѕР»Р±С†РѕРІ С‚Р°Р±Р»РёС†С‹
      */
     private static void parseProperties(Table parentTable, User user, JSONObject props)
     {
@@ -106,6 +106,11 @@ public class JSONSchemaParser
                 if (colData.containsKey("$ref"))
                     colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);
                 Table newTable = handleTable(key, user, colData);
+                Column col_id = new Column();
+                col_id.setName("$id");
+                col_id.setTable(newTable);
+                col_id.setType("string");
+                
 
                 parseProperties(newTable, user, (JSONObject) colData.get("properties"));
             }
@@ -113,12 +118,12 @@ public class JSONSchemaParser
     }
 
     /**
-     * Создает объект столбца, заполняет его данными и добавляет в список столбцов
+     * РЎРѕР·РґР°РµС‚ РѕР±СЉРµРєС‚ СЃС‚РѕР»Р±С†Р°, Р·Р°РїРѕР»РЅСЏРµС‚ РµРіРѕ РґР°РЅРЅС‹РјРё Рё РґРѕР±Р°РІР»СЏРµС‚ РІ СЃРїРёСЃРѕРє СЃС‚РѕР»Р±С†РѕРІ
      * 
-     * @param parentTable таблица-владелец
-     * @param name        имя столбца
-     * @param colData     данные о столбце
-     * @return            экземпляр столбца с данными
+     * @param parentTable С‚Р°Р±Р»РёС†Р°-РІР»Р°РґРµР»РµС†
+     * @param name        РёРјСЏ СЃС‚РѕР»Р±С†Р°
+     * @param colData     РґР°РЅРЅС‹Рµ Рѕ СЃС‚РѕР»Р±С†Рµ
+     * @return            СЌРєР·РµРјРїР»СЏСЂ СЃС‚РѕР»Р±С†Р° СЃ РґР°РЅРЅС‹РјРё
      */
     private static Column handleColumn(Table parentTable, String name, JSONObject colData)
     {
@@ -135,13 +140,14 @@ public class JSONSchemaParser
         return newCol;
     }
 
+
     /**
-     * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
+     * РЎРѕР·РґР°РµС‚ РѕР±СЉРµРєС‚ С‚Р°Р±Р»РёС†С‹, Р·Р°РїРѕР»РЅСЏРµС‚ РµРіРѕ РґР°РЅРЅС‹РјРё Рё РґРѕР±Р°РІР»СЏРµС‚ РІ СЃРїРёСЃРѕРє С‚Р°Р±Р»РёС†
      * 
-     * @param name    имя таблицы
-     * @param user    пользователь-владелец
-     * @param tabData данные о таблице
-     * @return        экземпляр таблицы с данными
+     * @param name    РёРјСЏ С‚Р°Р±Р»РёС†С‹
+     * @param user    РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ-РІР»Р°РґРµР»РµС†
+     * @param tabData РґР°РЅРЅС‹Рµ Рѕ С‚Р°Р±Р»РёС†Рµ
+     * @return        СЌРєР·РµРјРїР»СЏСЂ С‚Р°Р±Р»РёС†С‹ СЃ РґР°РЅРЅС‹РјРё
      */
     private static Table handleTable(String name, User user, JSONObject tabData)
     {
@@ -156,17 +162,19 @@ public class JSONSchemaParser
             newTable.setComment((String) tabData.get("description"));
             tables.put(name, newTable);
             tableColumns.put(name, new LinkedList<Column>());
+            
+            
             return newTable;
         }     
     }
 
     /**
-     * Поиск значения ключа по заданной ссылке
+     * РџРѕРёСЃРє Р·РЅР°С‡РµРЅРёСЏ РєР»СЋС‡Р° РїРѕ Р·Р°РґР°РЅРЅРѕР№ СЃСЃС‹Р»РєРµ
      * 
-     * @param path ссылка
-     * @param defs определения столбцов
-     * @param obj  текущая область поиска
-     * @return     значение ключа по ссылке
+     * @param path СЃСЃС‹Р»РєР°
+     * @param defs РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃС‚РѕР»Р±С†РѕРІ
+     * @param obj  С‚РµРєСѓС‰Р°СЏ РѕР±Р»Р°СЃС‚СЊ РїРѕРёСЃРєР°
+     * @return     Р·РЅР°С‡РµРЅРёРµ РєР»СЋС‡Р° РїРѕ СЃСЃС‹Р»РєРµ
      */
     private static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
     {
@@ -185,12 +193,12 @@ public class JSONSchemaParser
     }
     
     /**
-     * Производит построение всех возможных путей до столбца с заданным родителем
+     * РџСЂРѕРёР·РІРѕРґРёС‚ РїРѕСЃС‚СЂРѕРµРЅРёРµ РІСЃРµС… РІРѕР·РјРѕР¶РЅС‹С… РїСѓС‚РµР№ РґРѕ СЃС‚РѕР»Р±С†Р° СЃ Р·Р°РґР°РЅРЅС‹Рј СЂРѕРґРёС‚РµР»РµРј
      * 
-     * @param schema JSON-схема
-     * @param c      столбец
-     * @param paths  список возможных путей
-     * @return       список возможных путей
+     * @param schema JSON-СЃС…РµРјР°
+     * @param c      СЃС‚РѕР»Р±РµС†
+     * @param paths  СЃРїРёСЃРѕРє РІРѕР·РјРѕР¶РЅС‹С… РїСѓС‚РµР№
+     * @return       СЃРїРёСЃРѕРє РІРѕР·РјРѕР¶РЅС‹С… РїСѓС‚РµР№
      */
     public static List<String> buildColumnPaths(JSONSchema objSchema, Column c, List<String> paths)
     {
@@ -200,10 +208,10 @@ public class JSONSchemaParser
     }
     
     /**
-     * Создает словарь путей, столбцы из одинаковой таблицы имеют один и тот же ключ
+     * РЎРѕР·РґР°РµС‚ СЃР»РѕРІР°СЂСЊ РїСѓС‚РµР№, СЃС‚РѕР»Р±С†С‹ РёР· РѕРґРёРЅР°РєРѕРІРѕР№ С‚Р°Р±Р»РёС†С‹ РёРјРµСЋС‚ РѕРґРёРЅ Рё С‚РѕС‚ Р¶Рµ РєР»СЋС‡
      * 
-     * @param objSchema JSON-схема
-     * @param cols      искомые столбцы
+     * @param objSchema JSON-СЃС…РµРјР°
+     * @param cols      РёСЃРєРѕРјС‹Рµ СЃС‚РѕР»Р±С†С‹
      */
     public static /*Map<String, List<Column>>*/void buildAndMatchAllPaths(JSONSchema objSchema, Column... cols)
     {
@@ -222,13 +230,13 @@ public class JSONSchemaParser
     }
     
     /**
-     * Рекурсивно строит путь к столбцу
+     * Р РµРєСѓСЂСЃРёРІРЅРѕ СЃС‚СЂРѕРёС‚ РїСѓС‚СЊ Рє СЃС‚РѕР»Р±С†Сѓ
      * 
-     * @param schema JSON-схема
-     * @param path   текущий путь
-     * @param c      текущий столбец
-     * @param paths  список возможных путей
-     * @return       путь к столбцу
+     * @param schema JSON-СЃС…РµРјР°
+     * @param path   С‚РµРєСѓС‰РёР№ РїСѓС‚СЊ
+     * @param c      С‚РµРєСѓС‰РёР№ СЃС‚РѕР»Р±РµС†
+     * @param paths  СЃРїРёСЃРѕРє РІРѕР·РјРѕР¶РЅС‹С… РїСѓС‚РµР№
+     * @return       РїСѓС‚СЊ Рє СЃС‚РѕР»Р±С†Сѓ
      */
     private static String buildPath(JSONSchema objSchema, String path, Column c, List<String> paths)
     {

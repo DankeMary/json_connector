@@ -25,11 +25,11 @@ public class JSONTableFetcher implements TableFetcher
     }
        
     /**
-     * Берет значение из столбца по указанному пути
-     * @param name имя столбца
-     * @param path путь к столбцу
-     * @param obj  JSONобъект
-     * @return     значение столбца
+     * Р‘РµСЂРµС‚ Р·РЅР°С‡РµРЅРёРµ РёР· СЃС‚РѕР»Р±С†Р° РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ РїСѓС‚Рё
+     * @param name РёРјСЏ СЃС‚РѕР»Р±С†Р°
+     * @param path РїСѓС‚СЊ Рє СЃС‚РѕР»Р±С†Сѓ
+     * @param obj  JSONРѕР±СЉРµРєС‚
+     * @return     Р·РЅР°С‡РµРЅРёРµ СЃС‚РѕР»Р±С†Р°
      */
     public static String getColumnData(String name, String path, JSONObject obj)
     {
