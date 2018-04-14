@@ -7,6 +7,7 @@ import org.json.simple.JSONObject;
 
 import model.Column;
 import model.Table;
+import schema.JSONSchema;
 
 /**
  * @author MM
@@ -16,7 +17,8 @@ public class JSONTableFetcher implements TableFetcher
 {
     public List<Table> getTables(JSONSchema schema)
     {
-        return schema.getListedTables();
+        return null;
+        //return schema.getListedTables();
     }
     
     public List<Column> getColumns(JSONSchema schema)
@@ -36,10 +38,12 @@ public class JSONTableFetcher implements TableFetcher
         JSONObject curr = (JSONObject)obj.clone();
         if(!path.trim().equals("/"))
         {
-            String[] nodes = path.replaceFirst("^/", "").split("/", -1);
+            String[] nodes = path.replaceFirst("^/", "").split("/");
+            
             for(String s : nodes)
                 curr = (JSONObject)curr.get(s);
         }
+        //cast is wrong cause not all are string
         return (String)curr.get(name);
     }    
     

@@ -4,6 +4,7 @@ import org.json.simple.JSONObject;
 
 import model.Column;
 import model.Table;
+import schema.JSONSchema;
 
 public interface TableFetcher
 {    

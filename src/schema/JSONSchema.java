@@ -1,3 +1,4 @@
+package schema;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +14,8 @@ public class JSONSchema
 {    
     private String name;
     private JSONObject schema;
-    private Map<String, Table> tables;
+    private List<Table> tables;
+    //private Map<String, Table> tables;
     private Map<String, List<Column>> columns;
     private Map<String, List<Column>> tableColumns;     
 
@@ -30,7 +32,7 @@ public class JSONSchema
     {
         this.name = name; 
         schema = objSchema;
-        tables = new HashMap<String, Table>();
+        tables = new LinkedList<Table>(); //new HashMap<String, Table>();
         columns = new HashMap<String, List<Column>>();
         tableColumns = new HashMap<String, List<Column>>();
         parse();
@@ -62,20 +64,20 @@ public class JSONSchema
         this.schema = schema;
     }
 
-    public Map<String, Table> getTables()
+    public List<Table>/*Map<String, Table>*/ getTables()
     {
         return tables;
     }
 
-    public List<Table> getListedTables()
+    /*public List<Table> getListedTables()
     {
         List<Table> res = new LinkedList<Table>();
         for (Table t : tables.values())    
             res.add(t);        
         return res;
-    }
+    }*/
     
-    public void setTables(Map<String, Table> tables)
+    public void setTables(/*Map<String, Table>*/List<Table> tables)
     {
         this.tables = tables;
     }
