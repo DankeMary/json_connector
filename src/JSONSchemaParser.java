@@ -106,12 +106,8 @@ public class JSONSchemaParser
                 if (colData.containsKey("$ref"))
                     colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);
                 Table newTable = handleTable(key, user, colData);
-                Column col_id = new Column();
-                col_id.setName("$id");
-                col_id.setTable(newTable);
-                col_id.setType("string");
+                handleColumn(newTable, "$id", "string", "");
                 
-
                 parseProperties(newTable, user, (JSONObject) colData.get("properties"));
             }
         }
@@ -140,7 +136,29 @@ public class JSONSchemaParser
         return newCol;
     }
 
-
+    /**
+     * Создает объект столбца, заполняет его данными и добавляет в список столбцов
+     * @param parentTable таблица-владелец
+     * @param name        имя столбца
+     * @param type        тип данных столбца
+     * @param comment     комментарий
+     * @return            экземпляр столбца с данными
+     */
+    private static Column handleColumn(Table parentTable, String name, String type, String comment)
+    {
+        Column newCol = new Column();
+        newCol.setName(name);
+        newCol.setTable(parentTable);
+        newCol.setType(type);
+        newCol.setComment(comment);
+        if (!columns.containsKey(name))        
+            columns.put(name, new LinkedList<Column>());
+        columns.get(name).add(newCol);
+     
+        tableColumns.get(parentTable.getName()).add(newCol);        
+        return newCol;
+    }
+    
     /**
      * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
      * 
@@ -161,8 +179,7 @@ public class JSONSchemaParser
             newTable.setOwner(user);
             newTable.setComment((String) tabData.get("description"));
             tables.put(name, newTable);
-            tableColumns.put(name, new LinkedList<Column>());
-            
+            tableColumns.put(name, new LinkedList<Column>());           
             
             return newTable;
         }     
