@@ -1,7 +1,9 @@
 package database;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -63,8 +65,10 @@ public class SQLiteHandler implements DatabaseHandler
                 System.out.println(t.getName());
                 String query = createTable(t, schema.getTableColumns().get(t.getName()));                 
                 Statement stmt = conn.createStatement();
-                stmt.execute(query);                
-            }        
+                stmt.execute(query);   
+                stmt.close();
+            }      
+            conn.close();
         }
         catch (SQLException e)
         {
@@ -74,8 +78,8 @@ public class SQLiteHandler implements DatabaseHandler
                 if (conn != null) {
                     conn.close();
                 }
-            } catch (SQLException ex) {
-                System.out.println(ex.getMessage());
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
             }
         }
     }
@@ -122,7 +126,19 @@ public class SQLiteHandler implements DatabaseHandler
     @Override
     public void deleteDatabase()
     {
-        
+        try{
+            //close connection before executing
+            File file = new File(location + schema.getName() + ".db");
+            System.out.println(file.getAbsolutePath());
+            if(file.delete()){
+                System.out.println(file.getName() + " is deleted!");
+            }else{
+                System.out.println("Delete operation is failed.");
+            }
+           
+        } catch(Exception e){            
+            System.out.println(e.getMessage());            
+        }
     }
 
     @Override
