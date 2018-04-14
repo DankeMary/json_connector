@@ -44,12 +44,12 @@ public class JSONSchemaParser
 
         parseProperties(rootTable, user, properties);
         
-        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
-        }       
+        } */      
     }
     
     /**
