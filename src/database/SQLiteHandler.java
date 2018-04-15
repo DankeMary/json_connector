@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -32,6 +33,7 @@ public class SQLiteHandler implements DatabaseHandler
     
     public SQLiteHandler(JSONSchema schema) /*throws SQLException*/ //????????
     {
+        this.schema = schema;
         try {
             DriverManager.registerDriver(new JDBC()); 
             location = DB_LOCATION;   
@@ -63,7 +65,8 @@ public class SQLiteHandler implements DatabaseHandler
             for(Table t : schema.getTables())
             {
                 System.out.println(t.getName());
-                String query = createTable(t, schema.getTableColumns().get(t.getName()));                 
+                String query = createTable(t, schema.getTableColumns().get(t.getName()));    
+                System.out.println(query);
                 Statement stmt = conn.createStatement();
                 stmt.execute(query);   
                 stmt.close();
@@ -72,7 +75,7 @@ public class SQLiteHandler implements DatabaseHandler
         }
         catch (SQLException e)
         {
-            System.out.println(e.getMessage());
+            System.out.println("createDatabase :   " + e.getMessage());
         } finally {
             try {
                 if (conn != null) {
@@ -87,8 +90,8 @@ public class SQLiteHandler implements DatabaseHandler
     @Override
     public String createTable(Table t, List<Column> cols)
     {
-        StringBuilder query = new StringBuilder("CREATE TABLE ");
-        query = query.append(t.getName() + " (");
+        StringBuilder query = new StringBuilder("CREATE TABLE \"");
+        query = query.append(t.getName() + "\" (");
         query.append("\"$id\" INTEGER PRIMARY KEY ");
         for(Column c : schema.getTableColumns().get(t.getName()))
         {
@@ -106,7 +109,7 @@ public class SQLiteHandler implements DatabaseHandler
                     query.append(" REAL ");
                     break;
                 case "object":
-                    query.append(" INTEGER REFERENCES " + c.getName() + " ");
+                    query.append(" INTEGER REFERENCES \"" + c.getName() + "\" ");
                     break;
                 /*case "boolean":
                  * query.append(" INTEGER ");
@@ -147,11 +150,132 @@ public class SQLiteHandler implements DatabaseHandler
         
     }
 
+    private void insertData(String query)
+    {
+        //new connection for every record?
+       /* Connection conn = null;
+        try
+        {
+            conn = DriverManager.getConnection(connString);
+            for(Table t : schema.getTables())
+            {
+                System.out.println(t.getName());
+                //String query = createTable(t, schema.getTableColumns().get(t.getName()));                 
+                Statement stmt = conn.createStatement();
+                stmt.execute(query);   
+                stmt.close();
+            }      
+            conn.close();
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }*/
+    }
     @Override
     public void loadData(JSONObject data)
     {
+            walkThroughAndLoad(schema.getName(), (JSONObject)schema.getSchema().get("properties"), data);
+        
         
     }
 
-
+    private String createInsertQuery(String currTableName)
+    {
+        List<Column> cols = schema.getTableColumns().get(currTableName);
+        StringBuilder query = new StringBuilder("INSERT INTO \"" + currTableName + "\"(");
+        for(Column c : cols)
+        {
+            query.append("\"" + c.getName() + "\",");
+        }
+        //needed?
+        if (query.length() > 0) 
+        {
+            query.setLength(query.length() - 1);
+        }
+        query.append(") VALUES(");
+        for(int i = 0; i < cols.size(); i++)
+            query.append("?,");
+        if (query.length() > 0) 
+        {
+            query.setLength(query.length() - 1);
+        }
+        query.append(");");
+        //System.out.println(query.toString());
+        return query.toString();
+    }
+    public void walkThroughAndLoad(String currTableName, JSONObject currTable, JSONObject data)
+    {
+        Connection conn = null;
+        try
+        {
+            conn = DriverManager.getConnection(connString);
+            String query = createInsertQuery(currTableName);
+            List<Column> cols = schema.getTableColumns().get(currTableName);
+            int cnt = 1;
+            PreparedStatement pstmt = conn.prepareStatement(query);          
+            for(Column c : cols)
+            {
+                //if(c.getType().equals)
+                switch(c.getType())
+                {
+                    case "string":
+                        System.out.println(c.getName() + " : " + (String)data.get(c.getName()));
+                        pstmt.setString(cnt, (String)data.get(c.getName()));
+                        break;
+                    case "integer":
+                        System.out.println(c.getName() + " : " + data.get(c.getName()));
+                        pstmt.setLong(cnt, (long)data.get(c.getName()));
+                        break;
+                    case "number":
+                        System.out.println(c.getName() + " : " + (double)data.get(c.getName()));
+                        pstmt.setDouble(cnt, (double)data.get(c.getName()));
+                        break;
+                    /*case "array":
+                        
+                        break;*/
+                    case "object":
+                        walkThroughAndLoad(c.getName(), (JSONObject)null, (JSONObject)data.get(c.getName()));
+                        Statement st = conn.createStatement();
+                        ResultSet rs = st.executeQuery("SELECT MAX(\"$id\") AS LAST FROM \"" + c.getName() + "\";");
+                        if(rs.next())
+                            {System.out.println(c.getName() + " : " + rs.getInt("LAST"));
+                            pstmt.setInt(cnt, rs.getInt("LAST"));}
+                        else
+                            //pstmt.setNull(cnt, sqlType);
+                            pstmt.setInt(cnt, -1);
+                        break;
+                    /*case "boolean":
+                     * query.append(" INTEGER ");
+                        break;*/
+                }     
+                cnt++;
+            }
+            
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("walkThroughAndLoad :  " + e.getMessage());
+        }
+        finally {
+            //deleteDatabase();
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+        
+        //hashmap column - value?        
+    }
+    //private void loadData() {}
 }

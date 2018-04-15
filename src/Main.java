@@ -21,9 +21,15 @@ public class Main
 
         //Column pp = s.getColumns("first-name").get(0);
         
-        JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
+        //JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
+        JSONObject obj = SchemaUtils.getJson("e:\\try.json");
         
-        JSONSchemaParser.buildColumnPaths(s, s.getColumns("first-name").get(0), paths);
+        SQLiteHandler test = new SQLiteHandler(s);
+        test.loadData(obj);
+        /*for(Table t: s.getTables())
+            test.walkThroughAndLoad(t.getName(), null, null);*/
+        
+        //JSONSchemaParser.buildColumnPaths(s, s.getColumns("first-name").get(0), paths);
         //JSONSchemaParser.buildAndMatchAllPaths(s, s.getColumns("first-name").get(0), s.getColumns("street-address").get(0));
         /*for(String path : paths)
             if(JSONSchemaParser.checkPath(s.getColumns("first-name").get(0), s, path))
@@ -35,7 +41,7 @@ public class Main
         /*for(Table t: s.getTables())
             System.out.println(JSONSchemaParser.createTable(t));*/
         
-        SQLiteHandler test = new SQLiteHandler(s);
+        
               
     }
 }

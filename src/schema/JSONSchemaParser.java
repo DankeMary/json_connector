@@ -121,7 +121,7 @@ public class JSONSchemaParser
                 }
                 else if(newCol.getType().equals("array"))
                 {
-                    newCol.setType("string");
+                    //newCol.setType("string");
                     colData = (JSONObject)colData.get("items");
                 }
 
