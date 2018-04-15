@@ -26,6 +26,7 @@ public class Main
         
         SQLiteHandler test = new SQLiteHandler(s);
         test.loadData(obj);
+        System.out.println("Succeeded");
         /*for(Table t: s.getTables())
             test.walkThroughAndLoad(t.getName(), null, null);*/
         

@@ -12,7 +12,6 @@ public interface DatabaseHandler
 {
     void createDatabase(JSONSchema schema);
     String createTable(Table t, List<Column> cols);
-    void deleteTable(Table t);
     void deleteDatabase();
     void getData(Table t, Column... columns);
     void loadData(JSONObject data);

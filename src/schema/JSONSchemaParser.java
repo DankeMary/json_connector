@@ -16,7 +16,6 @@ public class JSONSchemaParser
     
     private static JSONObject schema;
     private static String name;
-    //private static Map<String, Table> tables;
     private static List<Table> tables;
     private static Map<String, List<Column>> columns;
     private static Map<String, List<Column>> tableColumns;
@@ -38,18 +37,17 @@ public class JSONSchemaParser
         user.setName(USER_NAME);
 
         Table rootTable = handleTable(name, user, schema);
-        //handleColumn(rootTable, "$id", "string", "");
 
         JSONObject properties = (JSONObject) schema.get("properties");
 
         parseProperties(rootTable, user, properties);
         
-        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
-        }     
+        }*/  
     }
     
     /**
@@ -121,7 +119,6 @@ public class JSONSchemaParser
                 }
                 else if(newCol.getType().equals("array"))
                 {
-                    //newCol.setType("string");
                     colData = (JSONObject)colData.get("items");
                 }
 
@@ -130,48 +127,7 @@ public class JSONSchemaParser
                     Table newTable = handleTable(name, user, colData);                
                     parseProperties(newTable, user, (JSONObject) colData.get("properties"));
                 }
-            }
-            
-            /*if (newCol.getType().equals("object"))
-            {
-                String name = key;
-                if (colData.containsKey("$ref"))
-                {
-                    String path = (String) colData.get("$ref");
-                    name = path.substring(path.lastIndexOf("/") + 1);
-                    //if (tables.containsKey(name))
-                    if (tableColumns.containsKey(name))
-                        continue;
-                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                   
-                }
-                Table newTable = handleTable(name, user, colData);
-                //handleColumn(newTable, "$id", "string", "");
-                
-                parseProperties(newTable, user, (JSONObject) colData.get("properties"));
-            }
-            else if (newCol.getType().equals("array"))
-            {
-                newCol.setType("string"); //string of ids
-                String name = key;
-                if (colData.containsKey("$ref"))
-                {
-                    String path = (String) colData.get("$ref");
-                    name = path.substring(path.lastIndexOf("/") + 1);
-                    //if (tables.containsKey(name))
-                    if (tableColumns.containsKey(name))
-                        //break;
-                        continue;
-                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                     
-                }
-                else 
-                    colData = (JSONObject)colData.get("items");
-                //type: array, array of arrays
-                if (colData.get("type").equals("object"))
-                {
-                    Table newTable = handleTable(name, user, colData);                
-                    parseProperties(newTable, user, (JSONObject) colData.get("properties"));
-                }                
-            }*/
+            }            
         }
     }
 
@@ -200,29 +156,6 @@ public class JSONSchemaParser
     }
 
     /**
-     * Создает объект столбца, заполняет его данными и добавляет в список столбцов
-     * @param parentTable таблица-владелец
-     * @param name        имя столбца
-     * @param type        тип данных столбца
-     * @param comment     комментарий
-     * @return            экземпляр столбца с данными
-     */
-    /*private static Column handleColumn(Table parentTable, String name, String type, String comment)
-    {
-        Column newCol = new Column();
-        newCol.setName(name);
-        newCol.setTable(parentTable);
-        newCol.setType(type);
-        newCol.setComment(comment);
-        if (!columns.containsKey(name))        
-            columns.put(name, new LinkedList<Column>());
-        columns.get(name).add(0, newCol);
-     
-        tableColumns.get(parentTable.getName()).add(newCol);        
-        return newCol;
-    }*/
-    
-    /**
      * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
      * 
      * @param name    имя таблицы
@@ -232,22 +165,16 @@ public class JSONSchemaParser
      */
     private static Table handleTable(String name, User user, JSONObject tabData)
     {
-        /*if(tables.containsKey(name))
-             return tables.get(name);
-        else
-        {*/
             name = name.trim().toLowerCase();
             Table newTable = new Table();
             newTable.setName(name);
             newTable.setType(Table.TYPE_TABLE);
             newTable.setOwner(user);
             newTable.setComment((String) tabData.get("description"));
-            //tables.put(name, newTable);
             tables.add(0, newTable);
             tableColumns.put(name, new LinkedList<Column>());           
             
             return newTable;
-        //}     
     }
 
     /**
@@ -258,7 +185,7 @@ public class JSONSchemaParser
      * @param obj  текущая область поиска
      * @return     значение ключа по ссылке
      */
-    private static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
+    public static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
     {
         if (path == null || path.isEmpty())
             return null;
