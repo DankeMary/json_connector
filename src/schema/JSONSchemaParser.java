@@ -108,7 +108,31 @@ public class JSONSchemaParser
             else
                 newCol = handleColumn(parentTable, key, colData);
             
-            if (newCol.getType().equals("object"))
+            if (newCol.getType().equals("object") || newCol.getType().equals("array"))
+            {
+                String name = key;
+                if (colData.containsKey("$ref"))
+                {
+                    String path = (String) colData.get("$ref");
+                    name = path.substring(path.lastIndexOf("/") + 1);
+                    if (tableColumns.containsKey(name))
+                        continue;
+                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                   
+                }
+                else if(newCol.getType().equals("array"))
+                {
+                    newCol.setType("string");
+                    colData = (JSONObject)colData.get("items");
+                }
+
+                if (colData.get("type").equals("object"))
+                {
+                    Table newTable = handleTable(name, user, colData);                
+                    parseProperties(newTable, user, (JSONObject) colData.get("properties"));
+                }
+            }
+            
+            /*if (newCol.getType().equals("object"))
             {
                 String name = key;
                 if (colData.containsKey("$ref"))
@@ -147,7 +171,7 @@ public class JSONSchemaParser
                     Table newTable = handleTable(name, user, colData);                
                     parseProperties(newTable, user, (JSONObject) colData.get("properties"));
                 }                
-            }
+            }*/
         }
     }
 
