@@ -22,6 +22,7 @@ public class SQLiteHandler implements DatabaseHandler
     private String location = DB_LOCATION;  
     private JSONSchema schema;
     private String connString;
+    private Connection conn = null;
 
     public SQLiteHandler() throws SQLException //????????
     {
@@ -56,7 +57,7 @@ public class SQLiteHandler implements DatabaseHandler
     @Override
     public void createDatabase(JSONSchema schema)
     {
-        Connection conn = null;
+        //Connection conn = null;
         try
         {
             System.out.println(location);
@@ -183,9 +184,24 @@ public class SQLiteHandler implements DatabaseHandler
     @Override
     public void loadData(JSONObject data)
     {
+        try
+        {
+            conn = DriverManager.getConnection(connString);
+        
             walkThroughAndLoad(schema.getName(), (JSONObject)schema.getSchema().get("properties"), data);
-        
-        
+            conn.close();    
+        }catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+        }
     }
 
     private String createInsertQuery(String currTableName)
@@ -214,10 +230,10 @@ public class SQLiteHandler implements DatabaseHandler
     }
     public void walkThroughAndLoad(String currTableName, JSONObject currTable, JSONObject data)
     {
-        Connection conn = null;
+        //Connection conn = null;
         try
         {
-            conn = DriverManager.getConnection(connString);
+            //conn = DriverManager.getConnection(connString);
             String query = createInsertQuery(currTableName);
             List<Column> cols = schema.getTableColumns().get(currTableName);
             int cnt = 1;
@@ -266,13 +282,13 @@ public class SQLiteHandler implements DatabaseHandler
         }
         finally {
             //deleteDatabase();
-            try {
+            /*try {
                 if (conn != null) {
                     conn.close();
                 }
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
-            }
+            }*/
         }
         
         //hashmap column - value?        
