@@ -44,12 +44,12 @@ public class JSONSchemaParser
 
         parseProperties(rootTable, user, properties);
         
-        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
-        } */      
+        }     
     }
     
     /**
@@ -124,6 +124,29 @@ public class JSONSchemaParser
                 //handleColumn(newTable, "$id", "string", "");
                 
                 parseProperties(newTable, user, (JSONObject) colData.get("properties"));
+            }
+            else if (newCol.getType().equals("array"))
+            {
+                newCol.setType("string"); //string of ids
+                String name = key;
+                if (colData.containsKey("$ref"))
+                {
+                    String path = (String) colData.get("$ref");
+                    name = path.substring(path.lastIndexOf("/") + 1);
+                    //if (tables.containsKey(name))
+                    if (tableColumns.containsKey(name))
+                        //break;
+                        continue;
+                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                     
+                }
+                else 
+                    colData = (JSONObject)colData.get("items");
+                //type: array, array of arrays
+                if (colData.get("type").equals("object"))
+                {
+                    Table newTable = handleTable(name, user, colData);                
+                    parseProperties(newTable, user, (JSONObject) colData.get("properties"));
+                }                
             }
         }
     }
