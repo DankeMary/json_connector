@@ -1,5 +1,6 @@
 package database;
 
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,35 +10,40 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.sqlite.JDBC;
 
 import model.Column;
 import model.Table;
 import schema.JSONSchema;
+import schema.JSONSchemaParser;
+
 
 public class SQLiteHandler implements DatabaseHandler
 {
-    private final String DB_LOCATION = System.getProperty("user.dir") + "\\src\\resources\\";
-    private String location = DB_LOCATION;  
+    private final String DB_LOCATION = System.getProperty("user.dir")
+        + "\\src\\resources\\";
+    private String location = DB_LOCATION;
     private JSONSchema schema;
     private String connString;
     private Connection conn = null;
 
-    public SQLiteHandler() throws SQLException //????????
+    public SQLiteHandler() throws SQLException // ????????
     {
         DriverManager.registerDriver(new JDBC());
-        location = DB_LOCATION;   
+        location = DB_LOCATION;
         schema = null;
         connString = "";
     }
-    
-    public SQLiteHandler(JSONSchema schema) /*throws SQLException*/ //????????
+
+    public SQLiteHandler(JSONSchema schema)
     {
         this.schema = schema;
-        try {
-            DriverManager.registerDriver(new JDBC()); 
-            location = DB_LOCATION;   
+        try
+        {
+            DriverManager.registerDriver(new JDBC());
+            location = DB_LOCATION;
             this.schema = schema;
             connString = "jdbc:sqlite:" + location + schema.getName() + ".db";
             createDatabase(this.schema);
@@ -47,42 +53,39 @@ public class SQLiteHandler implements DatabaseHandler
             System.out.println(e.getStackTrace());
         }
     }
-    
-    
-    private void filterTables(JSONSchema schema)
-    {
-        
-    }
-    
+
     @Override
     public void createDatabase(JSONSchema schema)
     {
-        //Connection conn = null;
         try
         {
-            System.out.println(location);
             connString = "jdbc:sqlite:" + location + schema.getName() + ".db";
             conn = DriverManager.getConnection(connString);
-            for(Table t : schema.getTables())
+            for (Table t : schema.getTables())
             {
-                System.out.println(t.getName());
-                String query = createTable(t, schema.getTableColumns().get(t.getName()));    
-                System.out.println(query);
+                String query = createTable(t,
+                    schema.getTableColumns().get(t.getName()));
                 Statement stmt = conn.createStatement();
-                stmt.execute(query);   
+                stmt.execute(query);
                 stmt.close();
-            }      
+            }
             conn.close();
         }
         catch (SQLException e)
         {
-            System.out.println("createDatabase :   " + e.getMessage());
-        } finally {
-            try {
-                if (conn != null) {
+            System.out.println(e.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                if (conn != null)
+                {
                     conn.close();
                 }
-            } catch (SQLException e) {
+            }
+            catch (SQLException e)
+            {
                 System.out.println(e.getMessage());
             }
         }
@@ -94,12 +97,12 @@ public class SQLiteHandler implements DatabaseHandler
         StringBuilder query = new StringBuilder("CREATE TABLE \"");
         query = query.append(t.getName() + "\" (");
         query.append("\"$id\" INTEGER PRIMARY KEY ");
-        for(Column c : schema.getTableColumns().get(t.getName()))
+        for (Column c : schema.getTableColumns().get(t.getName()))
         {
             query.append(", \"" + c.getName() + "\" ");
-            switch(c.getType())
+            switch (c.getType())
             {
-                case "string": 
+                case "string":
                 case "array":
                     query.append(" TEXT");
                     break;
@@ -112,93 +115,75 @@ public class SQLiteHandler implements DatabaseHandler
                 case "object":
                     query.append(" INTEGER REFERENCES \"" + c.getName() + "\" ");
                     break;
-                /*case "boolean":
-                 * query.append(" INTEGER ");
-                    break;*/
-            }            
+                /*
+                 * case "boolean": query.append(" INTEGER "); break;
+                 */
+            }
         }
         query.append(");");
         return query.toString();
     }
 
     @Override
-    public void deleteTable(Table t)
-    {
-        
-    }
-
-    @Override
     public void deleteDatabase()
     {
-        try{
-            //close connection before executing
+        try
+        {
+            conn.close();
             File file = new File(location + schema.getName() + ".db");
             System.out.println(file.getAbsolutePath());
-            if(file.delete()){
+            if (file.delete())
+            {
                 System.out.println(file.getName() + " is deleted!");
-            }else{
+            }
+            else
+            {
                 System.out.println("Delete operation is failed.");
             }
-           
-        } catch(Exception e){            
-            System.out.println(e.getMessage());            
+
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void getData(Table t, Column... columns)
     {
-        
+
     }
 
     private void insertData(String query)
     {
-        //new connection for every record?
-       /* Connection conn = null;
-        try
-        {
-            conn = DriverManager.getConnection(connString);
-            for(Table t : schema.getTables())
-            {
-                System.out.println(t.getName());
-                //String query = createTable(t, schema.getTableColumns().get(t.getName()));                 
-                Statement stmt = conn.createStatement();
-                stmt.execute(query);   
-                stmt.close();
-            }      
-            conn.close();
-        }
-        catch (SQLException e)
-        {
-            System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
-            }
-        }*/
+
     }
+
     @Override
     public void loadData(JSONObject data)
     {
         try
         {
             conn = DriverManager.getConnection(connString);
-        
-            walkThroughAndLoad(schema.getName(), (JSONObject)schema.getSchema().get("properties"), data);
-            conn.close();    
-        }catch (SQLException e)
+            walkThroughAndLoad(schema.getName(),
+                (JSONObject) schema.getSchema().get("properties"), data);
+            conn.close();
+        }
+        catch (SQLException e)
         {
             System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (conn != null) {
+        }
+        finally
+        {
+            try
+            {
+                if (conn != null)
+                {
                     conn.close();
                 }
-            } catch (SQLException e) {
+            }
+            catch (SQLException e)
+            {
                 System.out.println(e.getMessage());
             }
         }
@@ -207,91 +192,142 @@ public class SQLiteHandler implements DatabaseHandler
     private String createInsertQuery(String currTableName)
     {
         List<Column> cols = schema.getTableColumns().get(currTableName);
-        StringBuilder query = new StringBuilder("INSERT INTO \"" + currTableName + "\"(");
-        for(Column c : cols)
+        StringBuilder query = new StringBuilder(
+            "INSERT INTO \"" + currTableName + "\"(");
+        for (Column c : cols)
         {
             query.append("\"" + c.getName() + "\",");
         }
-        //needed?
-        if (query.length() > 0) 
-        {
-            query.setLength(query.length() - 1);
-        }
+        query.setLength(query.length() - 1);
         query.append(") VALUES(");
-        for(int i = 0; i < cols.size(); i++)
+        for (int i = 0; i < cols.size(); i++)
             query.append("?,");
-        if (query.length() > 0) 
-        {
-            query.setLength(query.length() - 1);
-        }
+        query.setLength(query.length() - 1);
         query.append(");");
-        //System.out.println(query.toString());
         return query.toString();
     }
-    public void walkThroughAndLoad(String currTableName, JSONObject currTable, JSONObject data)
+
+    public void walkThroughAndLoad(String currTableName, JSONObject currTable,
+        JSONObject data)
     {
-        //Connection conn = null;
         try
         {
-            //conn = DriverManager.getConnection(connString);
             String query = createInsertQuery(currTableName);
             List<Column> cols = schema.getTableColumns().get(currTableName);
             int cnt = 1;
-            PreparedStatement pstmt = conn.prepareStatement(query);          
-            for(Column c : cols)
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            for (Column c : cols)
             {
-                //if(c.getType().equals)
-                switch(c.getType())
+                switch (c.getType())
                 {
                     case "string":
-                        System.out.println(c.getName() + " : " + (String)data.get(c.getName()));
-                        pstmt.setString(cnt, (String)data.get(c.getName()));
+                        pstmt.setString(cnt, (String) data.get(c.getName()));
                         break;
                     case "integer":
-                        System.out.println(c.getName() + " : " + data.get(c.getName()));
-                        pstmt.setLong(cnt, (long)data.get(c.getName()));
+                        pstmt.setLong(cnt, (long) data.get(c.getName()));
                         break;
                     case "number":
-                        System.out.println(c.getName() + " : " + (double)data.get(c.getName()));
-                        pstmt.setDouble(cnt, (double)data.get(c.getName()));
+                        pstmt.setDouble(cnt, (double) data.get(c.getName()));
                         break;
-                    /*case "array":
-                        
-                        break;*/
-                    case "object":
-                        walkThroughAndLoad(c.getName(), (JSONObject)null, (JSONObject)data.get(c.getName()));
-                        Statement st = conn.createStatement();
-                        ResultSet rs = st.executeQuery("SELECT MAX(\"$id\") AS LAST FROM \"" + c.getName() + "\";");
-                        if(rs.next())
-                            {System.out.println(c.getName() + " : " + rs.getInt("LAST"));
-                            pstmt.setInt(cnt, rs.getInt("LAST"));}
+                    case "array":
+                        StringBuilder res = new StringBuilder();
+                        JSONArray arr = (JSONArray) data.get(c.getName());
+                        JSONObject sch = (JSONObject) currTable
+                            .get(c.getName());
+                        String type = null;
+                        if (sch.containsKey("$ref"))
+                        {
+                            String path = (String) sch.get("$ref");
+                            sch = JSONSchemaParser.findDef(path,
+                                (JSONObject) schema.getSchema()
+                                    .get("definitions"),
+                                (JSONObject) schema.getSchema());
+                            if (((JSONObject) sch.get("items")).get("type")
+                                .equals("object"))
+                                type = path
+                                    .substring(path.lastIndexOf("/") + 1);
+                        }
+                        else if (sch.get("type").equals("object"))
+                        {
+                            type = c.getName();
+                        }
+                        else if (((JSONObject) sch.get("items")).get("type")
+                            .equals("object"))
+                            type = c.getName();
+                        if (type == null)
+                        {
+                            for (int i = 0; i < arr.size(); i++)
+                            {
+                                res.append(arr.get(i) + " ");
+                            }
+                            pstmt.setString(cnt, res.toString());
+                        }
                         else
-                            //pstmt.setNull(cnt, sqlType);
+                        {
+
+                            for (int i = 0; i < arr.size(); i++)
+                            {
+                                walkThroughAndLoad(type,
+                                    (JSONObject) currTable.get(c.getName()),
+                                    (JSONObject) arr.get(i));
+                                Statement st1 = conn.createStatement();
+                                ResultSet rs1 = st1.executeQuery(
+                                    "SELECT MAX(\"$id\") AS LAST FROM \"" + type
+                                        + "\";");
+                                if (rs1.next())
+                                {
+                                    res.append(rs1.getInt("LAST") + " ");
+                                    pstmt.setInt(cnt, rs1.getInt("LAST"));
+                                }
+                                else
+                                    // pstmt.setNull(cnt, sqlType);
+                                    res.append(-1 + " ");
+                            }
+                            pstmt.setString(cnt, res.toString());
+                        }
+                        break;
+                    case "object":
+                        JSONObject currSchema = ((JSONObject) currTable
+                            .get(c.getName())).containsKey("$ref")
+                                ? JSONSchemaParser.findDef(
+                                    (String) ((JSONObject) currTable
+                                        .get(c.getName())).get("$ref"),
+                                    (JSONObject) schema.getSchema()
+                                        .get("definitions"),
+                                    (JSONObject) schema.getSchema())
+                                : (JSONObject) currTable.get(c.getName());
+                        walkThroughAndLoad(c.getName(),
+                            (JSONObject) currSchema.get("properties"),
+                            (JSONObject) data.get(c.getName()));
+                        Statement st2 = conn.createStatement();
+                        ResultSet rs2 = st2
+                            .executeQuery("SELECT MAX(\"$id\") AS LAST FROM \""
+                                + c.getName() + "\";");
+                        if (rs2.next())
+                            pstmt.setInt(cnt, rs2.getInt("LAST"));
+                        else
+                            // pstmt.setNull(cnt, sqlType);
                             pstmt.setInt(cnt, -1);
                         break;
-                    /*case "boolean":
-                     * query.append(" INTEGER ");
-                        break;*/
-                }     
+                    /*
+                     * case "boolean": query.append(" INTEGER "); break;
+                     */
+                }
                 cnt++;
             }
-            
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println("walkThroughAndLoad :  " + e.getMessage());
         }
-        finally {
-            //deleteDatabase();
-            /*try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
-            }*/
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
         }
-        
-        //hashmap column - value?        
+        finally
+        {
+            // deleteDatabase();
+            /*
+             * try { if (conn != null) { conn.close(); } } catch (SQLException
+             * e) { System.out.println(e.getMessage()); }
+             */
+        }
     }
-    //private void loadData() {}
 }
