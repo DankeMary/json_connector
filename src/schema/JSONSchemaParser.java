@@ -17,6 +17,7 @@ public class JSONSchemaParser
     private static JSONObject schema;
     private static String name;
     private static List<Table> tables;
+    private static Map<String, String> realTableNames;     //Def - JSON
     private static Map<String, List<Column>> columns;
     private static Map<String, List<Column>> tableColumns;
     
@@ -25,6 +26,7 @@ public class JSONSchemaParser
         schema = objSchema.getSchema();
         name = objSchema.getName();
         tables = objSchema.getTables();
+        realTableNames = objSchema.getRealTableNames();
         columns = objSchema.getColumns();
         tableColumns = objSchema.getTableColumns();
     }
@@ -47,7 +49,11 @@ public class JSONSchemaParser
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
-        }*/  
+        } 
+        for (Map.Entry<String, String> entry : realTableNames.entrySet()) {
+            System.out.println("Real name: " + entry.getKey());
+            System.out.println("    JSON name: " + entry.getValue());
+        } */
     }
     
     /**
@@ -57,7 +63,7 @@ public class JSONSchemaParser
      * @param path   путь
      * @return       валидный/невалидный
      */
-    public static boolean checkPath(Column c, JSONSchema objSchema, String path)
+    /*public static boolean checkPath(Column c, JSONSchema objSchema, String path)
     {
         initSchema(objSchema);
         JSONObject curr = (JSONObject) schema.get("properties");  
@@ -80,8 +86,8 @@ public class JSONSchemaParser
             }
         }
         return curr.containsKey(c.getName());
-    }
-    
+    }*/
+
     /**
      * Разбор пар в properties на столбцы и таблицы
      * 
@@ -97,34 +103,39 @@ public class JSONSchemaParser
             JSONObject colData = (JSONObject) props.get(key);
             Column newCol;
 
+            StringBuilder realName = new StringBuilder();
+            //if array then coldata.get items, if it contains ref then blabla
             if (colData.containsKey("$ref"))
             {
                 String path = (String) colData.get("$ref");
-                String name = path.substring(path.lastIndexOf("/") + 1);                
-                newCol = handleColumn(parentTable, name, findDef(path, (JSONObject)schema.get("definitions"), schema));
+                //StringBuilder realName = new StringBuilder(path.substring(path.lastIndexOf("/") + 1));
+                colData = findDef(realName, path, schema);
+                //newCol = handleColumn(parentTable, realName.toString(), colData);                
             }
-            else
+            //else
                 newCol = handleColumn(parentTable, key, colData);
             
             if (newCol.getType().equals("object") || newCol.getType().equals("array"))
             {
                 String name = key;
-                if (colData.containsKey("$ref"))
-                {
-                    String path = (String) colData.get("$ref");
-                    name = path.substring(path.lastIndexOf("/") + 1);
-                    if (tableColumns.containsKey(name))
-                        continue;
-                    colData = findDef((String) colData.get("$ref"),(JSONObject)schema.get("definitions"), schema);                   
-                }
-                else if(newCol.getType().equals("array"))
+                //StringBuilder realName = new StringBuilder(name);
+                if(newCol.getType().equals("array"))
                 {
                     colData = (JSONObject)colData.get("items");
                 }
-
-                if (colData.get("type").equals("object"))
+                
+                if (colData.containsKey("$ref"))
                 {
-                    Table newTable = handleTable(name, user, colData);                
+                    String path = (String) colData.get("$ref");                   
+                    colData = findDef(realName, (String) colData.get("$ref"), schema);
+                    if (tableColumns.containsKey(realName.toString()))
+                        continue;                                   
+                }               
+                
+                if (colData.get("type").equals("object"))
+                {                    
+                    Table newTable = handleTable(realName.toString(), user, colData);  
+                    realTableNames.put(realName.toString(), name);
                     parseProperties(newTable, user, (JSONObject) colData.get("properties"));
                 }
             }            
@@ -165,39 +176,46 @@ public class JSONSchemaParser
      */
     private static Table handleTable(String name, User user, JSONObject tabData)
     {
-            name = name.trim().toLowerCase();
-            Table newTable = new Table();
-            newTable.setName(name);
-            newTable.setType(Table.TYPE_TABLE);
-            newTable.setOwner(user);
-            newTable.setComment((String) tabData.get("description"));
-            tables.add(0, newTable);
-            tableColumns.put(name, new LinkedList<Column>());           
-            
-            return newTable;
+        name = name.trim().toLowerCase();
+        Table newTable = new Table();
+        newTable.setName(name);
+        newTable.setType(Table.TYPE_TABLE);
+        newTable.setOwner(user);
+        newTable.setComment((String) tabData.get("description"));
+        tables.add(0, newTable);
+        tableColumns.put(name, new LinkedList<Column>());           
+        
+        return newTable;
     }
 
     /**
      * Поиск значения ключа по заданной ссылке
      * 
+     * @param name имя объекта
      * @param path ссылка
-     * @param defs определения столбцов
      * @param obj  текущая область поиска
      * @return     значение ключа по ссылке
      */
-    public static JSONObject findDef(String path, JSONObject defs, JSONObject obj)
+    public static JSONObject findDef(StringBuilder name, String path, JSONObject obj)
     {
         if (path == null || path.isEmpty())
             return null;
         if (path.indexOf("/") == -1)
+        {   
+            obj = (JSONObject) obj.get(path);
             if(obj.containsKey("$ref"))
-                return findDef((String) obj.get("$ref"), defs, defs);
+                return findDef(name, (String) obj.get("$ref"), schema);        
             else
-                return (JSONObject) obj.get(path);
+            {
+                name.setLength(0);
+                name.append(path);
+                return obj;
+            }
+        }
         if (path.substring(0, 1).equals("#"))
-            return findDef(path.substring(path.indexOf("/") + 1), defs, obj);
+            return findDef(name, path.substring(path.indexOf("/") + 1), obj);
         else
-            return findDef(path.substring(path.indexOf("/") + 1), defs,
+            return findDef(name, path.substring(path.indexOf("/") + 1), 
                 (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
     }
     

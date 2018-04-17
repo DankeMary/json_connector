@@ -1,7 +1,16 @@
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.json.simple.JSONObject;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 
 import database.SQLiteHandler;
 import model.Column;
@@ -14,6 +23,38 @@ public class Main
 {
     public static void main(String args[])
     {
+        /*StringBuilder str = new StringBuilder("lala");
+        SchemaUtils.changeString(str);
+        System.out.println(str);*/
+        
+        
+        
+        /*Gson gson = new GsonBuilder()
+                .setLenient()
+                .create();*/
+        /*JsonParser parser = new JsonParser();
+        try
+        {
+            JsonReader reader = new JsonReader(new FileReader("e:\\nan.json"));
+            reader.setLenient(true);
+            JsonElement element = parser.parse(reader);
+            JsonObject num = element.getAsJsonObject();
+            System.out.println(num.get("num"));
+            //JSONObject obj = SchemaUtils.getJson("e:\\nan.json");
+            System.out.println("Succeeded 1");
+        }
+        catch (FileNotFoundException e) {}*/
+        
+        
+        
+        
+        //JsonParser parser = new JsonParser();
+        //JsonElement element = parser.parse("e:\\nan.json");
+        
+       
+        
+        
+        
         String s_path = "e:\\address.json";    
         JSONSchema s =  new JSONSchema(SchemaUtils.getTableName(s_path), SchemaUtils.getJson(s_path));
         
@@ -22,7 +63,7 @@ public class Main
         //Column pp = s.getColumns("first-name").get(0);
         
         //JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
-        JSONObject obj = SchemaUtils.getJson("e:\\try.json");
+         JSONObject obj = SchemaUtils.getJson("e:\\try.json");
         /*JSONObject obj = SchemaUtils.getJson("e:\\nan.json");
         
         obj.get("num");

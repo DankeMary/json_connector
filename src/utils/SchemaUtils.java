@@ -41,6 +41,11 @@ public class SchemaUtils
         return fname;
     }
 
+    public static void changeString(StringBuilder str)
+    {
+        
+        str.append("  LALALALALA");
+    }
     /**
      * Загрузка JSON-схемы из файла
      * 

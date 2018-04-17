@@ -104,7 +104,7 @@ public class SQLiteHandler implements DatabaseHandler
             {
                 case "string":
                 case "array":
-                    query.append(" TEXT");
+                    query.append(" TEXT ");
                     break;
                 case "integer":
                     query.append(" INTEGER ");
@@ -113,7 +113,7 @@ public class SQLiteHandler implements DatabaseHandler
                     query.append(" REAL ");
                     break;
                 case "object":
-                    query.append(" INTEGER REFERENCES \"" + c.getName() + "\" ");
+                    query.append(" INTEGER REFERENCES \"" + schema.getDefName(c.getName()) + "\"(\"$id\") ");
                     break;
                 /*
                  * case "boolean": query.append(" INTEGER "); break;
@@ -121,6 +121,7 @@ public class SQLiteHandler implements DatabaseHandler
             }
         }
         query.append(");");
+        System.out.println(query.toString());
         return query.toString();
     }
 
@@ -165,8 +166,7 @@ public class SQLiteHandler implements DatabaseHandler
         try
         {
             conn = DriverManager.getConnection(connString);
-            walkThroughAndLoad(schema.getName(),
-                (JSONObject) schema.getSchema().get("properties"), data);
+            walkThroughAndLoad(schema.getName(), (JSONObject) schema.getSchema().get("properties"), data);
             conn.close();
         }
         catch (SQLException e)
@@ -204,6 +204,7 @@ public class SQLiteHandler implements DatabaseHandler
             query.append("?,");
         query.setLength(query.length() - 1);
         query.append(");");
+        System.out.println(query.toString());
         return query.toString();
     }
 
@@ -218,7 +219,10 @@ public class SQLiteHandler implements DatabaseHandler
             Object value = null;
             for (Column c : cols)
             {
-                value = data.get(c.getName());
+                /*if (c.getType().equals("object") || c.getType().equals("array"))
+                    value = data.get(schema.getJSONName(c.getName()));
+                else*/
+                    value = data.get(c.getName());
                 switch (c.getType())
                 {
                     //WHAT CAN BE NULL???
@@ -251,28 +255,37 @@ public class SQLiteHandler implements DatabaseHandler
                             else
                             {
                                 StringBuilder res = new StringBuilder();
-                                JSONObject sch = (JSONObject) currTable.get(c.getName());
+                                StringBuilder realName = new StringBuilder(c.getName());
+                                //schema for field which keeps array
+                                JSONObject currSchema = (JSONObject)currTable.get(c.getName());
                                 String type = null;
-                                if (sch.containsKey("$ref"))
+                                if (currSchema.containsKey("$ref"))
                                 {
-                                    String path = (String) sch.get("$ref");
-                                    sch = JSONSchemaParser.findDef(path,
-                                        (JSONObject) schema.getSchema()
-                                            .get("definitions"),
-                                        (JSONObject) schema.getSchema());
-                                    if (((JSONObject) sch.get("items")).get("type")
-                                        .equals("object"))
-                                        type = path
-                                            .substring(path.lastIndexOf("/") + 1);
+                                    String path = (String) currSchema.get("$ref");
+                                    currSchema = JSONSchemaParser.findDef(realName, path,(JSONObject)schema.getSchema());
+                                    type = (String)currSchema.get("type");
+                                    currSchema = (JSONObject)currSchema.get("items");
                                 }
-                                else if (sch.get("type").equals("object"))
+                                else if (((JSONObject)currSchema.get("items")).containsKey("$ref"))
                                 {
+                                    String path = (String)((JSONObject)currSchema.get("items")).get("$ref");
+                                    currSchema = JSONSchemaParser.findDef(realName, path,(JSONObject)schema.getSchema());
+                                    type = (String)currSchema.get("type");
+                                }
+                                /*else if (currSchema.get("type").equals("object"))
+                                {
+                                    //does it ever go there?
                                     type = c.getName();
                                 }
-                                else if (((JSONObject) sch.get("items")).get("type")
-                                    .equals("object"))
-                                    type = c.getName();
-                                if (type == null)
+                                else if (((JSONObject) currSchema.get("items")).get("type").equals("object"))
+                                    type = c.getName();*/
+                                else
+                                    {
+                                        currSchema = (JSONObject)currSchema.get("items");
+                                        type = c.getType();
+                                    }
+                                
+                                if (!type.equals("object"))
                                 {
                                     for (int i = 0; i < arr.size(); i++)
                                     {
@@ -287,13 +300,15 @@ public class SQLiteHandler implements DatabaseHandler
                                         JSONObject arrValue = (JSONObject) arr.get(i);
                                         if (arrValue == null || arrValue.size() == 0)
                                             res.append(" null ");  // or space?
-                                        else {
-                                            walkThroughAndLoad(type,
-                                                (JSONObject) currTable.get(c.getName()),
-                                                arrValue);
+                                        else 
+                                        {
+                                            //currTable - schema, arrValue - value from array
+                                            System.out.println(type);
+                                            walkThroughAndLoad(realName.toString(), currSchema, arrValue);
                                             Statement st1 = conn.createStatement();
+                                            System.out.println("TYPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE   " + type);
                                             ResultSet rs1 = st1.executeQuery(
-                                                "SELECT MAX(\"$id\") AS LAST FROM \"" + type
+                                                "SELECT MAX(\"$id\") AS LAST FROM \"" + realName.toString()
                                                     + "\";");
                                             if (rs1.next())
                                             {
@@ -312,22 +327,24 @@ public class SQLiteHandler implements DatabaseHandler
                             pstmt.setNull(cnt, java.sql.Types.BIGINT);
                         else
                         {
-                            JSONObject currSchema = ((JSONObject) currTable
-                                .get(c.getName())).containsKey("$ref")
-                                    ? JSONSchemaParser.findDef(
-                                        (String) ((JSONObject) currTable
-                                            .get(c.getName())).get("$ref"),
-                                        (JSONObject) schema.getSchema()
-                                            .get("definitions"),
-                                        (JSONObject) schema.getSchema())
-                                    : (JSONObject) currTable.get(c.getName());
-                            walkThroughAndLoad(c.getName(),
+                            JSONObject currSchema = (JSONObject)currTable.get(c.getName());
+                            StringBuilder realName = new StringBuilder();
+                            if (currSchema.containsKey("$ref"))
+                                currSchema = JSONSchemaParser.findDef(realName,(String) currSchema.get("$ref"), schema.getSchema());
+                                    /*((JSONObject)currTable.get(schema.getJSONName(c.getName()))).containsKey("$ref")
+                                    ? JSONSchemaParser.findDef(null,(String) ((JSONObject) currTable.get(c.getName())).get("$ref"),
+                                        schema.getSchema())
+                                    : (JSONObject) currTable.get(c.getName());*/
+                            
+                            walkThroughAndLoad(realName.toString(),
                                 (JSONObject) currSchema.get("properties"),
                                 (JSONObject) value);
                             Statement st2 = conn.createStatement();
+                            String q = "SELECT MAX(\"$id\") AS LAST FROM \""
+                                    + /*c.getName()*/realName + "\";";
+                            System.out.println(q);
                             ResultSet rs2 = st2
-                                .executeQuery("SELECT MAX(\"$id\") AS LAST FROM \""
-                                    + c.getName() + "\";");
+                                .executeQuery(q);
                             if (rs2.next())
                                 pstmt.setInt(cnt, rs2.getInt("LAST"));
                         }
@@ -338,11 +355,13 @@ public class SQLiteHandler implements DatabaseHandler
                 }
                 cnt++;
             }
-            pstmt.executeUpdate();
+
+            pstmt.execute();
+            System.out.println();
         }
         catch (SQLException e)
         {
-            System.out.println(e.getMessage());
+            System.out.println(e.getMessage() + "        " + currTableName);
         }
         finally
         {

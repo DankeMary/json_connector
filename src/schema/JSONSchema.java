@@ -16,6 +16,7 @@ public class JSONSchema
     private JSONObject schema;
     private List<Table> tables;
     //private Map<String, Table> tables;
+    private Map<String, String> realTableNames;
     private Map<String, List<Column>> columns;
     private Map<String, List<Column>> tableColumns;     
 
@@ -24,6 +25,7 @@ public class JSONSchema
         name = "";
         schema = null;
         tables = null;
+        realTableNames = null;
         columns = null;
         tableColumns = null;
     }
@@ -32,12 +34,37 @@ public class JSONSchema
     {
         this.name = name; 
         schema = objSchema;
-        tables = new LinkedList<Table>(); //new HashMap<String, Table>();
+        tables = new LinkedList<Table>(); 
+        realTableNames = new HashMap<String, String>();
         columns = new HashMap<String, List<Column>>();
         tableColumns = new HashMap<String, List<Column>>();
         parse();
     }
     
+    public String getJSONName(String defName)
+    {
+        return realTableNames.get(defName);
+    }
+    
+    public String getDefName(String jsonName)
+    {
+        for (Map.Entry<String, String> entry : realTableNames.entrySet()) {
+            if(jsonName.equals(entry.getValue()))
+                return entry.getKey();
+        }
+        return null;
+    }
+    
+    public Map<String, String> getRealTableNames()
+    {
+        return realTableNames;
+    }
+
+    public void setRealTableNames(Map<String, String> realTableNames)
+    {
+        this.realTableNames = realTableNames;
+    }
+
     public void parse()
     {   
         JSONSchemaParser.parse(this);
