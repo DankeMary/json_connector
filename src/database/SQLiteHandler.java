@@ -207,8 +207,7 @@ public class SQLiteHandler implements DatabaseHandler
         return query.toString();
     }
 
-    public void walkThroughAndLoad(String currTableName, JSONObject currTable,
-        JSONObject data)
+    public void walkThroughAndLoad(String currTableName, JSONObject currTable, JSONObject data)
     {
         try
         {
@@ -216,98 +215,122 @@ public class SQLiteHandler implements DatabaseHandler
             List<Column> cols = schema.getTableColumns().get(currTableName);
             int cnt = 1;
             PreparedStatement pstmt = conn.prepareStatement(query);
+            Object value = null;
             for (Column c : cols)
             {
+                value = data.get(c.getName());
                 switch (c.getType())
                 {
-                    case "string":
-                        pstmt.setString(cnt, (String) data.get(c.getName()));
+                    //WHAT CAN BE NULL???
+                    case "string":                        
+                        if (value == null)
+                            pstmt.setNull(cnt, java.sql.Types.VARCHAR); //or NVARCHAR?
+                        else
+                            pstmt.setString(cnt, (String)value);
                         break;
                     case "integer":
-                        pstmt.setLong(cnt, (long) data.get(c.getName()));
+                        if (value == null)
+                            pstmt.setNull(cnt, java.sql.Types.BIGINT); 
+                        else
+                            pstmt.setLong(cnt, (long)value);
                         break;
                     case "number":
-                        pstmt.setDouble(cnt, (double) data.get(c.getName()));
+                        if (value == null)
+                            pstmt.setNull(cnt, java.sql.Types.FLOAT); //or DOUBLE PRECISION?
+                        else
+                            pstmt.setDouble(cnt, (double) data.get(c.getName()));
                         break;
                     case "array":
-                        StringBuilder res = new StringBuilder();
-                        JSONArray arr = (JSONArray) data.get(c.getName());
-                        JSONObject sch = (JSONObject) currTable
-                            .get(c.getName());
-                        String type = null;
-                        if (sch.containsKey("$ref"))
-                        {
-                            String path = (String) sch.get("$ref");
-                            sch = JSONSchemaParser.findDef(path,
-                                (JSONObject) schema.getSchema()
-                                    .get("definitions"),
-                                (JSONObject) schema.getSchema());
-                            if (((JSONObject) sch.get("items")).get("type")
-                                .equals("object"))
-                                type = path
-                                    .substring(path.lastIndexOf("/") + 1);
-                        }
-                        else if (sch.get("type").equals("object"))
-                        {
-                            type = c.getName();
-                        }
-                        else if (((JSONObject) sch.get("items")).get("type")
-                            .equals("object"))
-                            type = c.getName();
-                        if (type == null)
-                        {
-                            for (int i = 0; i < arr.size(); i++)
-                            {
-                                res.append(arr.get(i) + " ");
-                            }
-                            pstmt.setString(cnt, res.toString());
-                        }
+                        if (value == null)
+                            pstmt.setNull(cnt, java.sql.Types.FLOAT); //or DOUBLE PRECISION?
                         else
                         {
-
-                            for (int i = 0; i < arr.size(); i++)
+                            JSONArray arr = (JSONArray) value;
+                            if (arr.size() == 0)
+                                pstmt.setString(cnt, ""); //"" OR null?
+                            else
                             {
-                                walkThroughAndLoad(type,
-                                    (JSONObject) currTable.get(c.getName()),
-                                    (JSONObject) arr.get(i));
-                                Statement st1 = conn.createStatement();
-                                ResultSet rs1 = st1.executeQuery(
-                                    "SELECT MAX(\"$id\") AS LAST FROM \"" + type
-                                        + "\";");
-                                if (rs1.next())
+                                StringBuilder res = new StringBuilder();
+                                JSONObject sch = (JSONObject) currTable.get(c.getName());
+                                String type = null;
+                                if (sch.containsKey("$ref"))
                                 {
-                                    res.append(rs1.getInt("LAST") + " ");
-                                    pstmt.setInt(cnt, rs1.getInt("LAST"));
+                                    String path = (String) sch.get("$ref");
+                                    sch = JSONSchemaParser.findDef(path,
+                                        (JSONObject) schema.getSchema()
+                                            .get("definitions"),
+                                        (JSONObject) schema.getSchema());
+                                    if (((JSONObject) sch.get("items")).get("type")
+                                        .equals("object"))
+                                        type = path
+                                            .substring(path.lastIndexOf("/") + 1);
+                                }
+                                else if (sch.get("type").equals("object"))
+                                {
+                                    type = c.getName();
+                                }
+                                else if (((JSONObject) sch.get("items")).get("type")
+                                    .equals("object"))
+                                    type = c.getName();
+                                if (type == null)
+                                {
+                                    for (int i = 0; i < arr.size(); i++)
+                                    {
+                                        res.append(arr.get(i) + " ");
+                                    }
+                                    pstmt.setString(cnt, res.toString());
                                 }
                                 else
-                                    // pstmt.setNull(cnt, sqlType);
-                                    res.append(-1 + " ");
+                                {
+                                    for (int i = 0; i < arr.size(); i++)
+                                    {
+                                        JSONObject arrValue = (JSONObject) arr.get(i);
+                                        if (arrValue == null || arrValue.size() == 0)
+                                            res.append(" null ");  // or space?
+                                        else {
+                                            walkThroughAndLoad(type,
+                                                (JSONObject) currTable.get(c.getName()),
+                                                arrValue);
+                                            Statement st1 = conn.createStatement();
+                                            ResultSet rs1 = st1.executeQuery(
+                                                "SELECT MAX(\"$id\") AS LAST FROM \"" + type
+                                                    + "\";");
+                                            if (rs1.next())
+                                            {
+                                                res.append(rs1.getInt("LAST") + " ");
+                                                pstmt.setInt(cnt, rs1.getInt("LAST"));
+                                            }
+                                        }
+                                    }
+                                    pstmt.setString(cnt, res.toString());
+                                }
                             }
-                            pstmt.setString(cnt, res.toString());
-                        }
+                        }                        
                         break;
                     case "object":
-                        JSONObject currSchema = ((JSONObject) currTable
-                            .get(c.getName())).containsKey("$ref")
-                                ? JSONSchemaParser.findDef(
-                                    (String) ((JSONObject) currTable
-                                        .get(c.getName())).get("$ref"),
-                                    (JSONObject) schema.getSchema()
-                                        .get("definitions"),
-                                    (JSONObject) schema.getSchema())
-                                : (JSONObject) currTable.get(c.getName());
-                        walkThroughAndLoad(c.getName(),
-                            (JSONObject) currSchema.get("properties"),
-                            (JSONObject) data.get(c.getName()));
-                        Statement st2 = conn.createStatement();
-                        ResultSet rs2 = st2
-                            .executeQuery("SELECT MAX(\"$id\") AS LAST FROM \""
-                                + c.getName() + "\";");
-                        if (rs2.next())
-                            pstmt.setInt(cnt, rs2.getInt("LAST"));
+                        if (value == null)
+                            pstmt.setNull(cnt, java.sql.Types.BIGINT);
                         else
-                            // pstmt.setNull(cnt, sqlType);
-                            pstmt.setInt(cnt, -1);
+                        {
+                            JSONObject currSchema = ((JSONObject) currTable
+                                .get(c.getName())).containsKey("$ref")
+                                    ? JSONSchemaParser.findDef(
+                                        (String) ((JSONObject) currTable
+                                            .get(c.getName())).get("$ref"),
+                                        (JSONObject) schema.getSchema()
+                                            .get("definitions"),
+                                        (JSONObject) schema.getSchema())
+                                    : (JSONObject) currTable.get(c.getName());
+                            walkThroughAndLoad(c.getName(),
+                                (JSONObject) currSchema.get("properties"),
+                                (JSONObject) value);
+                            Statement st2 = conn.createStatement();
+                            ResultSet rs2 = st2
+                                .executeQuery("SELECT MAX(\"$id\") AS LAST FROM \""
+                                    + c.getName() + "\";");
+                            if (rs2.next())
+                                pstmt.setInt(cnt, rs2.getInt("LAST"));
+                        }
                         break;
                     /*
                      * case "boolean": query.append(" INTEGER "); break;

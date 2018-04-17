@@ -23,10 +23,16 @@ public class Main
         
         //JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
         JSONObject obj = SchemaUtils.getJson("e:\\try.json");
+        /*JSONObject obj = SchemaUtils.getJson("e:\\nan.json");
+        
+        obj.get("num");
+        System.out.println(obj.get("num"));*/
         
         SQLiteHandler test = new SQLiteHandler(s);
         test.loadData(obj);
         System.out.println("Succeeded");
+        //test.deleteDatabase();
+        
         /*for(Table t: s.getTables())
             test.walkThroughAndLoad(t.getName(), null, null);*/
         
