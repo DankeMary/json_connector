@@ -55,7 +55,7 @@ public class Main
         
         
         
-        String s_path = "e:\\address.json";    
+        String s_path = "e:\\schema.json";    
         JSONSchema s =  new JSONSchema(SchemaUtils.getTableName(s_path), SchemaUtils.getJson(s_path));
         
         List<String> paths = new LinkedList<String>();
@@ -63,14 +63,18 @@ public class Main
         //Column pp = s.getColumns("first-name").get(0);
         
         //JSONObject obj = SchemaUtils.getJson("e:\\test2.json");
-         JSONObject obj = SchemaUtils.getJson("e:\\try.json");
+         JSONObject obj = SchemaUtils.getJson("e:\\data.json");
         /*JSONObject obj = SchemaUtils.getJson("e:\\nan.json");
         
         obj.get("num");
         System.out.println(obj.get("num"));*/
         
         SQLiteHandler test = new SQLiteHandler(s);
-        test.loadData(obj);
+        test.uploadData(obj);
+        Table tTab = new Table();
+        tTab.setName("block_size");
+        //test.getData(tTab, (Column)s.getTableColumns().get(tTab.getName()).toArray()[0], (Column)s.getTableColumns().get(tTab.getName()).toArray()[2]);
+        test.getData(tTab);
         System.out.println("Succeeded");
         //test.deleteDatabase();
         

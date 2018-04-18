@@ -23,7 +23,7 @@ public class JSONTableFetcher implements TableFetcher
     
     public List<Column> getColumns(JSONSchema schema)
     {
-        return schema.getListedColumns();
+        return schema.getAllColumnsListed();
     }
        
     /**

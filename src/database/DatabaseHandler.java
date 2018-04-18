@@ -15,5 +15,5 @@ public interface DatabaseHandler
     void deleteDatabase();
     void getData(Table t, Column... columns);
     void getData(Table t);
-    void loadData(JSONObject data);
+    void uploadData(JSONObject data);
 }
