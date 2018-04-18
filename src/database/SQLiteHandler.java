@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.json.simple.JSONArray;
@@ -306,7 +307,6 @@ public class SQLiteHandler implements DatabaseHandler
                                             System.out.println(type);
                                             walkThroughAndLoad(realName.toString(), currSchema, arrValue);
                                             Statement st1 = conn.createStatement();
-                                            System.out.println("TYPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE   " + type);
                                             ResultSet rs1 = st1.executeQuery(
                                                 "SELECT MAX(\"$id\") AS LAST FROM \"" + realName.toString()
                                                     + "\";");
@@ -317,6 +317,7 @@ public class SQLiteHandler implements DatabaseHandler
                                             }
                                         }
                                     }
+                                    res.setLength(res.length() - 1);
                                     pstmt.setString(cnt, res.toString());
                                 }
                             }
@@ -370,6 +371,81 @@ public class SQLiteHandler implements DatabaseHandler
              * try { if (conn != null) { conn.close(); } } catch (SQLException
              * e) { System.out.println(e.getMessage()); }
              */
+        }
+    }
+
+    @Override
+    public void getData(Table t)
+    {
+        try
+        {
+        String query = "SELECT * FROM \"" + t.getName() + "\";";
+        conn = DriverManager.getConnection(connString);
+        PreparedStatement pstmt = conn.prepareStatement(query);        
+        //pstmt.setString(1, t.getName());
+        ResultSet res = pstmt.executeQuery();
+        List<String> resList = new LinkedList<String>();
+        
+        int i = 2;
+        while (res.next())
+        {
+            StringBuilder str = new StringBuilder("\"" + String.valueOf(res.getLong("$id")) + "\"");
+            for(Column c : schema.getTableColumns().get(t.getName()))
+            {
+                switch(c.getType())
+                {
+                    case "string":
+                    case "array":
+                        String valStr = res.getString(c.getName());
+                        if (res.wasNull()) 
+                            str.append("  \"null\"");
+                        else
+                            str.append("  \"" + valStr + "\"");
+                        System.out.println(valStr);
+                        break;
+                    case "integer":
+                    case "object":
+                        long valLong = res.getLong(c.getName());
+                        if (res.wasNull()) 
+                            str.append("  \"null\"");
+                        else
+                            str.append("  \"" + valLong + "\"");
+                        System.out.println(valLong);
+                        break;
+                    case "number":
+                        double valDouble = res.getDouble(c.getName());
+                        if (res.wasNull()) 
+                            str.append("  \"null\"");
+                        else
+                            str.append("  \"" + valDouble + "\"");
+                        System.out.println(valDouble);
+                        break;
+                    /*case "boolean":
+                     * break;*/                        
+                }
+            }
+            resList.add(str.toString());
+        }
+        for(String s : resList)
+            System.out.println(s);
+        
+        } catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                System.out.println(e.getMessage());
+            }
         }
     }
 }

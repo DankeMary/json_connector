@@ -14,5 +14,6 @@ public interface DatabaseHandler
     String createTable(Table t, List<Column> cols);
     void deleteDatabase();
     void getData(Table t, Column... columns);
+    void getData(Table t);
     void loadData(JSONObject data);
 }
