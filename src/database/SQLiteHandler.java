@@ -30,12 +30,19 @@ public class SQLiteHandler implements DatabaseHandler
     private String connString;
     private Connection conn = null;
 
-    public SQLiteHandler() throws SQLException // ????????
+    public SQLiteHandler() // throws SQLException  ????????
     {
+        try
+        {
         DriverManager.registerDriver(new JDBC());
         location = DB_LOCATION;
         schema = null;
         connString = "";
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        }
     }
 
     public SQLiteHandler(JSONSchema schema)
@@ -51,7 +58,7 @@ public class SQLiteHandler implements DatabaseHandler
         }
         catch (SQLException e)
         {
-            System.out.println(e.getStackTrace());
+            System.out.println(e.getMessage());
         }
     }
 
@@ -64,13 +71,12 @@ public class SQLiteHandler implements DatabaseHandler
             conn = DriverManager.getConnection(connString);
             for (Table t : schema.getTables())
             {
-                String query = createTable(t,
-                    schema.getTableColumns().get(t.getName()));
+                String query = createTable(t, schema.getTableColumns().get(t.getName()));
                 Statement stmt = conn.createStatement();
                 stmt.execute(query);
                 stmt.close();
             }
-            conn.close();
+            conn.close(); //нцжно ли здесь?? finally
         }
         catch (SQLException e)
         {
@@ -114,15 +120,17 @@ public class SQLiteHandler implements DatabaseHandler
                     query.append(" REAL ");
                     break;
                 case "object":
-                    query.append(" INTEGER REFERENCES \"" + schema.getDefName(c.getName()) + "\"(\"$id\") ");
+                    query.append(" INTEGER REFERENCES \""
+                        + schema.getDefName(c.getName()) + "\"(\"$id\") ");
                     break;
-                /*
-                 * case "boolean": query.append(" INTEGER "); break;
-                 */
+                case "boolean": 
+                    query.append(" NUMERIC "); 
+                    break;
+                //default?
             }
         }
         query.append(");");
-        System.out.println(query.toString());
+        //System.out.println(query.toString());
         return query.toString();
     }
 
@@ -133,7 +141,6 @@ public class SQLiteHandler implements DatabaseHandler
         {
             conn.close();
             File file = new File(location + schema.getName() + ".db");
-            System.out.println(file.getAbsolutePath());
             if (file.delete())
             {
                 System.out.println(file.getName() + " is deleted!");
@@ -142,7 +149,6 @@ public class SQLiteHandler implements DatabaseHandler
             {
                 System.out.println("Delete operation is failed.");
             }
-
         }
         catch (Exception e)
         {
@@ -150,103 +156,127 @@ public class SQLiteHandler implements DatabaseHandler
         }
     }
 
+    private boolean checkColumns(Table t, Column... columns)
+    {
+        for (Column c : columns)
+        {
+            if (!t.getName().equals(c.getTable().getName()))
+                return false;
+        }
+        return true;
+    }
     @Override
     public void getData(Table t, Column... columns)
     {
-        //check that columns are actually from that table
-        try
-        {
-        StringBuilder query = new StringBuilder("SELECT * FROM \"" + t.getName() + "\";");
-        for(Column c : columns)
-        {
-            query.append("\"" + c.getName() + "\",");
-        }
-        query.setLength(query.length() - 1);
-        query.append(" FROM \"" + t.getName() + "\";");
-        
-        conn = DriverManager.getConnection(connString);
-        PreparedStatement pstmt = conn.prepareStatement(query.toString());        
-        //pstmt.setString(1, t.getName());
-        ResultSet res = pstmt.executeQuery();
-        List<String> resList = new LinkedList<String>();
-        
-        int i = 1;
-        while (res.next())
-        {
-            StringBuilder str = new StringBuilder(/*"\"" + String.valueOf(res.getLong("$id")) + "\""*/);
-            for(Column c : columns)
-            {
-                str.append(c.getName() + ": ");
-                switch(c.getType())
-                {
-                    case "string":
-                    case "array":
-                        String valStr = res.getString(c.getName());                        
-                        if (res.wasNull()) 
-                            str.append("\"null\"  ");
-                        else
-                            str.append("\"" + valStr + "\"  ");
-                        //System.out.println(valStr);
-                        break;
-                    case "integer":
-                    case "object":
-                        long valLong = res.getLong(c.getName());
-                        if (res.wasNull()) 
-                            str.append("\"null\"  ");
-                        else
-                            str.append("\"" + valLong + "\"  ");
-                        //System.out.println(valLong);
-                        break;
-                    case "number":
-                        double valDouble = res.getDouble(c.getName());
-                        if (res.wasNull()) 
-                            str.append("\"null\"  ");
-                        else
-                            str.append("\"" + valDouble + "\"  ");
-                        //System.out.println(valDouble);
-                        break;
-                    /*case "boolean":
-                     * break;*/                        
-                }
-            }
-            resList.add(str.toString());
-        }
-        for(String s : resList)
-            System.out.println(s);
-        
-        } catch (SQLException e)
-        {
-            System.out.println(e.getMessage());
-        }
-        finally
-        {
+        // check that columns are actually from that table
+        if (!checkColumns(t, columns))
+            System.out.println("1 or some columns don't belong to the given table!");
+        else
             try
             {
-                if (conn != null)
+                StringBuilder query = new StringBuilder(
+                    "SELECT * FROM \"" + t.getName() + "\";");
+                for (Column c : columns)
                 {
-                    conn.close();
+                    query.append("\"" + c.getName() + "\",");
                 }
+                query.setLength(query.length() - 1);
+                query.append(" FROM \"" + t.getName() + "\";");
+    
+                conn = DriverManager.getConnection(connString);
+                PreparedStatement pstmt = conn.prepareStatement(query.toString());
+                // pstmt.setString(1, t.getName());
+                ResultSet res = pstmt.executeQuery();
+                List<String> resList = new LinkedList<String>();
+    
+                int i = 1;  //i = 2
+                while (res.next())
+                {
+                    StringBuilder str = new StringBuilder(/*
+                                                           * "\"" +
+                                                           * String.valueOf(res.
+                                                           * getLong("$id")) + "\""
+                                                           */);
+                    for (Column c : columns)
+                    {
+                        str.append(c.getName() + ": ");
+                        switch (c.getType())
+                        {
+                            case "string":
+                            case "array":
+                                String valStr = res.getString(c.getName());
+                                if (res.wasNull())
+                                    str.append("\"null\",  ");
+                                else
+                                    str.append("\"" + valStr + "\",  ");
+                                break;
+                            case "integer":
+                            case "object":
+                                long valLong = res.getLong(c.getName());
+                                if (res.wasNull())
+                                    str.append("\"null\" , ");
+                                else
+                                    str.append("\"" + valLong + "\",  ");
+                                break;
+                            case "number":
+                                double valDouble = res.getDouble(c.getName());
+                                if (res.wasNull())
+                                    str.append("\"null\",  ");
+                                else
+                                    str.append("\"" + valDouble + "\",  ");
+                                break;
+                            
+                            case "boolean": 
+                                boolean valBoolean = res.getBoolean(c.getName());
+                                if (res.wasNull())
+                                    str.append("\"null\",  ");
+                                else
+                                    str.append("\"" + valBoolean + "\",  ");
+                                break;
+                             
+                        }
+                    }
+                    str.setLength(str.lastIndexOf(","));
+                    resList.add(str.toString());
+                }
+                printData(resList);
             }
             catch (SQLException e)
             {
                 System.out.println(e.getMessage());
             }
-        }
+            finally
+            {
+                try
+                {
+                    if (conn != null)
+                    {
+                        conn.close();
+                    }
+                }
+                catch (SQLException e)
+                {
+                    System.out.println(e.getMessage());
+                }
+            }
     }
 
-    private void insertData(String query)
+    public void printData(List<String> resList)
     {
-
+        for (String s : resList)
+            System.out.println(s);
     }
 
     @Override
-    public void loadData(JSONObject data)
+    public void uploadData(JSONObject data)
     {
         try
         {
             conn = DriverManager.getConnection(connString);
-            walkThroughAndLoad(schema.getName(), (JSONObject) schema.getSchema().get("properties"), data);
-            conn.close();
+            walkAndLoad(schema.getName(),
+                (JSONObject) schema.getSchema().get("properties"), data);
+            // mind : finally
+            // conn.close();
         }
         catch (SQLException e)
         {
@@ -283,11 +313,11 @@ public class SQLiteHandler implements DatabaseHandler
             query.append("?,");
         query.setLength(query.length() - 1);
         query.append(");");
-        System.out.println(query.toString());
         return query.toString();
     }
 
-    public void walkThroughAndLoad(String currTableName, JSONObject currTable, JSONObject data)
+    private void walkAndLoad(String currTableName, JSONObject currTable,
+        JSONObject data)
     {
         try
         {
@@ -298,72 +328,80 @@ public class SQLiteHandler implements DatabaseHandler
             Object value = null;
             for (Column c : cols)
             {
-                /*if (c.getType().equals("object") || c.getType().equals("array"))
-                    value = data.get(schema.getJSONName(c.getName()));
-                else*/
-                    value = data.get(c.getName());
+                /*
+                 * if (c.getType().equals("object") ||
+                 * c.getType().equals("array")) value =
+                 * data.get(schema.getJSONName(c.getName())); else
+                 */
+                value = data.get(c.getName());
                 switch (c.getType())
                 {
-                    //WHAT CAN BE NULL???
-                    case "string":                        
+                    case "string":
                         if (value == null)
-                            pstmt.setNull(cnt, java.sql.Types.VARCHAR); //or NVARCHAR?
+                            pstmt.setNull(cnt, java.sql.Types.VARCHAR); 
                         else
-                            pstmt.setString(cnt, (String)value);
+                            pstmt.setString(cnt, (String) value);
                         break;
                     case "integer":
                         if (value == null)
-                            pstmt.setNull(cnt, java.sql.Types.BIGINT); 
+                            pstmt.setNull(cnt, java.sql.Types.BIGINT);
                         else
-                            pstmt.setLong(cnt, (long)value);
+                            pstmt.setLong(cnt, (long) value);
                         break;
                     case "number":
                         if (value == null)
-                            pstmt.setNull(cnt, java.sql.Types.FLOAT); //or DOUBLE PRECISION?
+                            pstmt.setNull(cnt, java.sql.Types.FLOAT); // or
+                                                                      // DOUBLE
+                                                                      // PRECISION?
                         else
-                            pstmt.setDouble(cnt, (double) data.get(c.getName()));
+                            pstmt.setDouble(cnt,
+                                (double) data.get(c.getName()));
                         break;
                     case "array":
                         if (value == null)
-                            pstmt.setNull(cnt, java.sql.Types.FLOAT); //or DOUBLE PRECISION?
+                            pstmt.setNull(cnt, java.sql.Types.VARCHAR); 
                         else
                         {
                             JSONArray arr = (JSONArray) value;
                             if (arr.size() == 0)
-                                pstmt.setString(cnt, ""); //"" OR null?
+                                pstmt.setString(cnt, ""); // "" OR null?
                             else
                             {
                                 StringBuilder res = new StringBuilder();
-                                StringBuilder realName = new StringBuilder(c.getName());
-                                //schema for field which keeps array
-                                JSONObject currSchema = (JSONObject)currTable.get(c.getName());
+                                StringBuilder realName = new StringBuilder(
+                                    c.getName());
+                                // schema for field which keeps array
+                                JSONObject currSchema = (JSONObject) currTable
+                                    .get(c.getName());
                                 String type = null;
                                 if (currSchema.containsKey("$ref"))
                                 {
-                                    String path = (String) currSchema.get("$ref");
-                                    currSchema = JSONSchemaParser.findDef(realName, path,(JSONObject)schema.getSchema());
-                                    type = (String)currSchema.get("type");
-                                    currSchema = (JSONObject)currSchema.get("items");
+                                    String path = (String) currSchema
+                                        .get("$ref");
+                                    currSchema = JSONSchemaParser.findDef(
+                                        realName, path,
+                                        (JSONObject) schema.getSchema());
+                                    currSchema = (JSONObject) currSchema
+                                        .get("items");
+                                    type = (String) currSchema.get("type");
+                                    
                                 }
-                                else if (((JSONObject)currSchema.get("items")).containsKey("$ref"))
+                                else if (((JSONObject) currSchema.get("items"))
+                                    .containsKey("$ref"))
                                 {
-                                    String path = (String)((JSONObject)currSchema.get("items")).get("$ref");
-                                    currSchema = JSONSchemaParser.findDef(realName, path,(JSONObject)schema.getSchema());
-                                    type = (String)currSchema.get("type");
+                                    String path = (String) ((JSONObject) currSchema
+                                        .get("items")).get("$ref");
+                                    currSchema = JSONSchemaParser.findDef(
+                                        realName, path,
+                                        (JSONObject) schema.getSchema());
+                                    type = (String) currSchema.get("type");
                                 }
-                                /*else if (currSchema.get("type").equals("object"))
-                                {
-                                    //does it ever go there?
-                                    type = c.getName();
-                                }
-                                else if (((JSONObject) currSchema.get("items")).get("type").equals("object"))
-                                    type = c.getName();*/
                                 else
-                                    {
-                                        currSchema = (JSONObject)currSchema.get("items");
-                                        type = c.getType();
-                                    }
-                                
+                                {
+                                    currSchema = (JSONObject) currSchema.get("items");
+                                    type = c.getType();
+                                }
+
                                 if (!type.equals("object"))
                                 {
                                     for (int i = 0; i < arr.size(); i++)
@@ -376,22 +414,28 @@ public class SQLiteHandler implements DatabaseHandler
                                 {
                                     for (int i = 0; i < arr.size(); i++)
                                     {
-                                        JSONObject arrValue = (JSONObject) arr.get(i);
-                                        if (arrValue == null || arrValue.size() == 0)
-                                            res.append(" null ");  // or space?
-                                        else 
+                                        JSONObject arrValue = (JSONObject) arr
+                                            .get(i);
+                                        if (arrValue == null
+                                            || arrValue.size() == 0)
+                                            res.append(" null "); // or space?
+                                        else
                                         {
-                                            //currTable - schema, arrValue - value from array
+                                            // currTable - schema, arrValue -
+                                            // value from array
                                             System.out.println(type);
-                                            walkThroughAndLoad(realName.toString(), currSchema, arrValue);
-                                            Statement st1 = conn.createStatement();
+                                            walkAndLoad(realName.toString(), (JSONObject)currSchema.get("properties"), arrValue);
+                                            Statement st1 = conn
+                                                .createStatement();
                                             ResultSet rs1 = st1.executeQuery(
-                                                "SELECT MAX(\"$id\") AS LAST FROM \"" + realName.toString()
+                                                "SELECT MAX(\"$id\") AS LAST FROM \""
+                                                    + realName.toString()
                                                     + "\";");
                                             if (rs1.next())
                                             {
-                                                res.append(rs1.getInt("LAST") + " ");
-                                                pstmt.setInt(cnt, rs1.getInt("LAST"));
+                                                int val = rs1.getInt("LAST");
+                                                res.append(val + " ");
+                                                pstmt.setInt(cnt, val);
                                             }
                                         }
                                     }
@@ -399,31 +443,37 @@ public class SQLiteHandler implements DatabaseHandler
                                     pstmt.setString(cnt, res.toString());
                                 }
                             }
-                        }                        
+                        }
                         break;
                     case "object":
                         if (value == null)
                             pstmt.setNull(cnt, java.sql.Types.BIGINT);
                         else
                         {
-                            JSONObject currSchema = (JSONObject)currTable.get(c.getName());
+                            JSONObject currSchema = (JSONObject) currTable
+                                .get(c.getName());
                             StringBuilder realName = new StringBuilder();
                             if (currSchema.containsKey("$ref"))
-                                currSchema = JSONSchemaParser.findDef(realName,(String) currSchema.get("$ref"), schema.getSchema());
-                                    /*((JSONObject)currTable.get(schema.getJSONName(c.getName()))).containsKey("$ref")
-                                    ? JSONSchemaParser.findDef(null,(String) ((JSONObject) currTable.get(c.getName())).get("$ref"),
-                                        schema.getSchema())
-                                    : (JSONObject) currTable.get(c.getName());*/
-                            
-                            walkThroughAndLoad(realName.toString(),
+                                currSchema = JSONSchemaParser.findDef(realName,
+                                    (String) currSchema.get("$ref"),
+                                    schema.getSchema());
+                            /*
+                             * ((JSONObject)currTable.get(schema.getJSONName(c.
+                             * getName()))).containsKey("$ref") ?
+                             * JSONSchemaParser.findDef(null,(String)
+                             * ((JSONObject)
+                             * currTable.get(c.getName())).get("$ref"),
+                             * schema.getSchema()) : (JSONObject)
+                             * currTable.get(c.getName());
+                             */
+
+                            walkAndLoad(realName.toString(),
                                 (JSONObject) currSchema.get("properties"),
                                 (JSONObject) value);
                             Statement st2 = conn.createStatement();
                             String q = "SELECT MAX(\"$id\") AS LAST FROM \""
-                                    + /*c.getName()*/realName + "\";";
-                            System.out.println(q);
-                            ResultSet rs2 = st2
-                                .executeQuery(q);
+                                + realName + "\";";
+                            ResultSet rs2 = st2.executeQuery(q);
                             if (rs2.next())
                                 pstmt.setInt(cnt, rs2.getInt("LAST"));
                         }
@@ -436,11 +486,10 @@ public class SQLiteHandler implements DatabaseHandler
             }
 
             pstmt.execute();
-            System.out.println();
         }
         catch (SQLException e)
         {
-            System.out.println(e.getMessage() + "        " + currTableName);
+            System.out.println(e.getMessage());
         }
         finally
         {
@@ -457,57 +506,60 @@ public class SQLiteHandler implements DatabaseHandler
     {
         try
         {
-        String query = "SELECT * FROM \"" + t.getName() + "\";";
-        conn = DriverManager.getConnection(connString);
-        PreparedStatement pstmt = conn.prepareStatement(query);        
-        //pstmt.setString(1, t.getName());
-        ResultSet res = pstmt.executeQuery();
-        List<String> resList = new LinkedList<String>();
-        
-        int i = 2;
-        while (res.next())
-        {
-            StringBuilder str = new StringBuilder("\"" + String.valueOf(res.getLong("$id")) + "\"");
-            for(Column c : schema.getTableColumns().get(t.getName()))
+            String query = "SELECT * FROM \"" + t.getName() + "\";";
+            conn = DriverManager.getConnection(connString);
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            // pstmt.setString(1, t.getName());
+            ResultSet res = pstmt.executeQuery();
+            List<String> resList = new LinkedList<String>();
+
+            int i = 2;
+            while (res.next())
             {
-                switch(c.getType())
+                StringBuilder str = new StringBuilder(
+                    "\"" + String.valueOf(res.getLong("$id")) + "\"");
+                for (Column c : schema.getTableColumns().get(t.getName()))
                 {
-                    case "string":
-                    case "array":
-                        String valStr = res.getString(c.getName());
-                        if (res.wasNull()) 
-                            str.append("  \"null\"");
-                        else
-                            str.append("  \"" + valStr + "\"");
-                        System.out.println(valStr);
-                        break;
-                    case "integer":
-                    case "object":
-                        long valLong = res.getLong(c.getName());
-                        if (res.wasNull()) 
-                            str.append("  \"null\"");
-                        else
-                            str.append("  \"" + valLong + "\"");
-                        System.out.println(valLong);
-                        break;
-                    case "number":
-                        double valDouble = res.getDouble(c.getName());
-                        if (res.wasNull()) 
-                            str.append("  \"null\"");
-                        else
-                            str.append("  \"" + valDouble + "\"");
-                        System.out.println(valDouble);
-                        break;
-                    /*case "boolean":
-                     * break;*/                        
+                    switch (c.getType())
+                    {
+                        case "string":
+                        case "array":
+                            String valStr = res.getString(c.getName());
+                            if (res.wasNull())
+                                str.append("  \"null\"");
+                            else
+                                str.append("  \"" + valStr + "\"");
+                            // System.out.println(valStr);
+                            break;
+                        case "integer":
+                        case "object":
+                            long valLong = res.getLong(c.getName());
+                            if (res.wasNull())
+                                str.append("  \"null\"");
+                            else
+                                str.append("  \"" + valLong + "\"");
+                            // System.out.println(valLong);
+                            break;
+                        case "number":
+                            double valDouble = res.getDouble(c.getName());
+                            if (res.wasNull())
+                                str.append("  \"null\"");
+                            else
+                                str.append("  \"" + valDouble + "\"");
+                            // System.out.println(valDouble);
+                            break;
+                        /*
+                         * case "boolean": break;
+                         */
+                    }
                 }
+                resList.add(str.toString());
             }
-            resList.add(str.toString());
+            for (String s : resList)
+                System.out.println(s);
+
         }
-        for(String s : resList)
-            System.out.println(s);
-        
-        } catch (SQLException e)
+        catch (SQLException e)
         {
             System.out.println(e.getMessage());
         }

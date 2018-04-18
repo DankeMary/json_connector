@@ -15,7 +15,6 @@ public class JSONSchema
     private String name;
     private JSONObject schema;
     private List<Table> tables;
-    //private Map<String, Table> tables;
     private Map<String, String> realTableNames;
     private Map<String, List<Column>> columns;
     private Map<String, List<Column>> tableColumns;     
@@ -67,7 +66,8 @@ public class JSONSchema
 
     public void parse()
     {   
-        JSONSchemaParser.parse(this);
+        JSONSchemaParser parser = new JSONSchemaParser(this);        
+        parser.parse();
     }
     
     //getters & setters
@@ -91,20 +91,12 @@ public class JSONSchema
         this.schema = schema;
     }
 
-    public List<Table>/*Map<String, Table>*/ getTables()
+    public List<Table> getTables()
     {
         return tables;
     }
-
-    /*public List<Table> getListedTables()
-    {
-        List<Table> res = new LinkedList<Table>();
-        for (Table t : tables.values())    
-            res.add(t);        
-        return res;
-    }*/
     
-    public void setTables(/*Map<String, Table>*/List<Table> tables)
+    public void setTables(List<Table> tables)
     {
         this.tables = tables;
     }
@@ -117,15 +109,14 @@ public class JSONSchema
     {
         this.columns = columns;
     }  
-    public List<Column> getListedColumns()
+    public List<Column> getAllColumnsListed()
     {
         List<Column> res = new LinkedList<Column>();
         
         for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet())            
             res.addAll(entry.getValue());
         return res;
-    }
-    
+    }    
     
     public List<Column> getColumns(Table t)
     {

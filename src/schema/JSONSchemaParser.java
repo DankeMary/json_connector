@@ -21,7 +21,7 @@ public class JSONSchemaParser
     private static Map<String, List<Column>> columns;
     private static Map<String, List<Column>> tableColumns;
     
-    private static void initSchema(JSONSchema objSchema)
+    public JSONSchemaParser(JSONSchema objSchema)
     {
         schema = objSchema.getSchema();
         name = objSchema.getName();
@@ -31,10 +31,8 @@ public class JSONSchemaParser
         tableColumns = objSchema.getTableColumns();
     }
     
-    public static void parse(JSONSchema objSchema)
+    public void parse()
     {   
-        initSchema(objSchema);
-        
         User user = new User();
         user.setName(USER_NAME);
 
@@ -43,51 +41,25 @@ public class JSONSchemaParser
         JSONObject properties = (JSONObject) schema.get("properties");
 
         parseProperties(rootTable, user, properties);
-        
-        /*for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
+    }
+    
+    public void printTablesColumns()
+    {
+        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
             System.out.println("Table: " + entry.getKey());
             List<Column> cols = entry.getValue();
             for(Column c : cols)
                 System.out.println("    " + c.getName());
         } 
+    }
+    public void printRealTableNames()
+    {
         for (Map.Entry<String, String> entry : realTableNames.entrySet()) {
             System.out.println("Real name: " + entry.getKey());
             System.out.println("    JSON name: " + entry.getValue());
-        } */
+        }
     }
     
-    /**
-     * Проверяет, существует ли указанный путь и наличие столбца по нему
-     * @param c      искомый столбец
-     * @param schema JSON-схема
-     * @param path   путь
-     * @return       валидный/невалидный
-     */
-    /*public static boolean checkPath(Column c, JSONSchema objSchema, String path)
-    {
-        initSchema(objSchema);
-        JSONObject curr = (JSONObject) schema.get("properties");  
-        if(!path.trim().equals("/"))
-        {
-            String[] nodes = path.replaceFirst("^/", "").split("/", 0);
-        
-            for(String s : nodes)
-            {
-                if(curr.containsKey(s))
-                {
-                    curr = (JSONObject)curr.get(s);
-                    if (curr.containsKey("$ref"))                                        
-                        curr = findDef((String)curr.get("$ref"), (JSONObject)schema.get("definitions"), schema);
-                    if (curr.get("type").equals("object"))
-                        curr = (JSONObject)curr.get("properties");
-                }
-                else 
-                    return false;
-            }
-        }
-        return curr.containsKey(c.getName());
-    }*/
-
     /**
      * Разбор пар в properties на столбцы и таблицы
      * 
@@ -104,21 +76,16 @@ public class JSONSchemaParser
             Column newCol;
 
             StringBuilder realName = new StringBuilder();
-            //if array then coldata.get items, if it contains ref then blabla
+            
             if (colData.containsKey("$ref"))
             {
-                String path = (String) colData.get("$ref");
-                //StringBuilder realName = new StringBuilder(path.substring(path.lastIndexOf("/") + 1));
-                colData = findDef(realName, path, schema);
-                //newCol = handleColumn(parentTable, realName.toString(), colData);                
+                //String path = (String) colData.get("$ref");
+                colData = findDef(realName, (String) colData.get("$ref"), schema);             
             }
-            //else
-                newCol = handleColumn(parentTable, key, colData);
+            newCol = handleColumn(parentTable, key, colData);
             
             if (newCol.getType().equals("object") || newCol.getType().equals("array"))
             {
-                String name = key;
-                //StringBuilder realName = new StringBuilder(name);
                 if(newCol.getType().equals("array"))
                 {
                     colData = (JSONObject)colData.get("items");
@@ -126,16 +93,18 @@ public class JSONSchemaParser
                 
                 if (colData.containsKey("$ref"))
                 {
-                    String path = (String) colData.get("$ref");                   
+                    //String path = (String) colData.get("$ref");                   
                     colData = findDef(realName, (String) colData.get("$ref"), schema);
-                    if (tableColumns.containsKey(realName.toString()))
-                        continue;                                   
+                    /*if (tableColumns.containsKey(realName.toString()))
+                        continue; */                                  
                 }               
                 
                 if (colData.get("type").equals("object"))
-                {                    
+                {           
+                    if (tableColumns.containsKey(realName.toString()))
+                        continue;
                     Table newTable = handleTable(realName.toString(), user, colData);  
-                    realTableNames.put(realName.toString(), name);
+                    realTableNames.put(realName.toString(), key);
                     parseProperties(newTable, user, (JSONObject) colData.get("properties"));
                 }
             }            
@@ -227,12 +196,12 @@ public class JSONSchemaParser
      * @param paths  список возможных путей
      * @return       список возможных путей
      */
-    public static List<String> buildColumnPaths(JSONSchema objSchema, Column c, List<String> paths)
+    /*public static List<String> buildColumnPaths(JSONSchema objSchema, Column c, List<String> paths)
     {
        initSchema(objSchema);
        buildPath(objSchema, "", c, paths);
        return paths;
-    }
+    }*/
     
     /**
      * Создает словарь путей, столбцы из одинаковой таблицы имеют один и тот же ключ
@@ -240,7 +209,7 @@ public class JSONSchemaParser
      * @param objSchema JSON-схема
      * @param cols      искомые столбцы
      */
-    public static /*Map<String, List<Column>>*/void buildAndMatchAllPaths(JSONSchema objSchema, Column... cols)
+   /* public static void buildAndMatchAllPaths(JSONSchema objSchema, Column... cols)
     {
         Map<String, List<Column>> matchedPaths = new HashMap<String, List<Column>>();
         for(Column c : cols)
@@ -254,7 +223,7 @@ public class JSONSchemaParser
                 matchedPaths.get(s).add(c);
             }
         }        
-    }
+    }*/
     
     /**
      * Рекурсивно строит путь к столбцу
@@ -265,7 +234,7 @@ public class JSONSchemaParser
      * @param paths  список возможных путей
      * @return       путь к столбцу
      */
-    private static String buildPath(JSONSchema objSchema, String path, Column c, List<String> paths)
+    /*private static String buildPath(JSONSchema objSchema, String path, Column c, List<String> paths)
     {
         Table parentTable = c.getTable(); 
         List<Column> possible = objSchema.getColumns(parentTable.getName());
@@ -283,5 +252,5 @@ public class JSONSchemaParser
             for(Column col : possible)
                 currPath.insert(0, buildPath(objSchema, currPath.toString(), col, paths)); 
         return "";
-    }
+    }*/
 }
