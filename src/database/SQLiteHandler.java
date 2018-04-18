@@ -30,14 +30,14 @@ public class SQLiteHandler implements DatabaseHandler
     private String connString;
     private Connection conn = null;
 
-    public SQLiteHandler() // throws SQLException  ????????
+    public SQLiteHandler() // throws SQLException ????????
     {
         try
         {
-        DriverManager.registerDriver(new JDBC());
-        location = DB_LOCATION;
-        schema = null;
-        connString = "";
+            DriverManager.registerDriver(new JDBC());
+            location = DB_LOCATION;
+            schema = null;
+            connString = "";
         }
         catch (SQLException e)
         {
@@ -71,12 +71,13 @@ public class SQLiteHandler implements DatabaseHandler
             conn = DriverManager.getConnection(connString);
             for (Table t : schema.getTables())
             {
-                String query = createTable(t, schema.getTableColumns().get(t.getName()));
+                String query = createTable(t,
+                    schema.getTableColumns().get(t.getName()));
                 Statement stmt = conn.createStatement();
                 stmt.execute(query);
                 stmt.close();
             }
-            conn.close(); //нцжно ли здесь?? finally
+            conn.close(); // is needed here? finally
         }
         catch (SQLException e)
         {
@@ -123,14 +124,13 @@ public class SQLiteHandler implements DatabaseHandler
                     query.append(" INTEGER REFERENCES \""
                         + schema.getDefName(c.getName()) + "\"(\"$id\") ");
                     break;
-                case "boolean": 
-                    query.append(" NUMERIC "); 
+                case "boolean":
+                    query.append(" NUMERIC ");
                     break;
-                //default?
+                // default?
             }
         }
         query.append(");");
-        //System.out.println(query.toString());
         return query.toString();
     }
 
@@ -165,12 +165,13 @@ public class SQLiteHandler implements DatabaseHandler
         }
         return true;
     }
+
     @Override
     public void getData(Table t, Column... columns)
     {
-        // check that columns are actually from that table
         if (!checkColumns(t, columns))
-            System.out.println("1 or some columns don't belong to the given table!");
+            System.out
+                .println("1 or some columns don't belong to the given table!");
         else
             try
             {
@@ -182,20 +183,22 @@ public class SQLiteHandler implements DatabaseHandler
                 }
                 query.setLength(query.length() - 1);
                 query.append(" FROM \"" + t.getName() + "\";");
-    
+
                 conn = DriverManager.getConnection(connString);
-                PreparedStatement pstmt = conn.prepareStatement(query.toString());
+                PreparedStatement pstmt = conn
+                    .prepareStatement(query.toString());
                 // pstmt.setString(1, t.getName());
                 ResultSet res = pstmt.executeQuery();
                 List<String> resList = new LinkedList<String>();
-    
-                int i = 1;  //i = 2
+
+                int i = 1; // i = 2
                 while (res.next())
                 {
                     StringBuilder str = new StringBuilder(/*
                                                            * "\"" +
                                                            * String.valueOf(res.
-                                                           * getLong("$id")) + "\""
+                                                           * getLong("$id")) +
+                                                           * "\""
                                                            */);
                     for (Column c : columns)
                     {
@@ -225,15 +228,16 @@ public class SQLiteHandler implements DatabaseHandler
                                 else
                                     str.append("\"" + valDouble + "\",  ");
                                 break;
-                            
-                            case "boolean": 
-                                boolean valBoolean = res.getBoolean(c.getName());
+
+                            case "boolean":
+                                boolean valBoolean = res
+                                    .getBoolean(c.getName());
                                 if (res.wasNull())
                                     str.append("\"null\",  ");
                                 else
                                     str.append("\"" + valBoolean + "\",  ");
                                 break;
-                             
+
                         }
                     }
                     str.setLength(str.lastIndexOf(","));
@@ -275,7 +279,6 @@ public class SQLiteHandler implements DatabaseHandler
             conn = DriverManager.getConnection(connString);
             walkAndLoad(schema.getName(),
                 (JSONObject) schema.getSchema().get("properties"), data);
-            // mind : finally
             // conn.close();
         }
         catch (SQLException e)
@@ -303,16 +306,19 @@ public class SQLiteHandler implements DatabaseHandler
         List<Column> cols = schema.getTableColumns().get(currTableName);
         StringBuilder query = new StringBuilder(
             "INSERT INTO \"" + currTableName + "\"(");
+        
         for (Column c : cols)
-        {
             query.append("\"" + c.getName() + "\",");
-        }
+        
         query.setLength(query.length() - 1);
         query.append(") VALUES(");
+        
         for (int i = 0; i < cols.size(); i++)
             query.append("?,");
+        
         query.setLength(query.length() - 1);
         query.append(");");
+        
         return query.toString();
     }
 
@@ -328,17 +334,12 @@ public class SQLiteHandler implements DatabaseHandler
             Object value = null;
             for (Column c : cols)
             {
-                /*
-                 * if (c.getType().equals("object") ||
-                 * c.getType().equals("array")) value =
-                 * data.get(schema.getJSONName(c.getName())); else
-                 */
                 value = data.get(c.getName());
                 switch (c.getType())
                 {
                     case "string":
                         if (value == null)
-                            pstmt.setNull(cnt, java.sql.Types.VARCHAR); 
+                            pstmt.setNull(cnt, java.sql.Types.VARCHAR);
                         else
                             pstmt.setString(cnt, (String) value);
                         break;
@@ -359,7 +360,7 @@ public class SQLiteHandler implements DatabaseHandler
                         break;
                     case "array":
                         if (value == null)
-                            pstmt.setNull(cnt, java.sql.Types.VARCHAR); 
+                            pstmt.setNull(cnt, java.sql.Types.VARCHAR);
                         else
                         {
                             JSONArray arr = (JSONArray) value;
@@ -384,7 +385,7 @@ public class SQLiteHandler implements DatabaseHandler
                                     currSchema = (JSONObject) currSchema
                                         .get("items");
                                     type = (String) currSchema.get("type");
-                                    
+
                                 }
                                 else if (((JSONObject) currSchema.get("items"))
                                     .containsKey("$ref"))
@@ -398,7 +399,8 @@ public class SQLiteHandler implements DatabaseHandler
                                 }
                                 else
                                 {
-                                    currSchema = (JSONObject) currSchema.get("items");
+                                    currSchema = (JSONObject) currSchema
+                                        .get("items");
                                     type = c.getType();
                                 }
 
@@ -424,7 +426,10 @@ public class SQLiteHandler implements DatabaseHandler
                                             // currTable - schema, arrValue -
                                             // value from array
                                             System.out.println(type);
-                                            walkAndLoad(realName.toString(), (JSONObject)currSchema.get("properties"), arrValue);
+                                            walkAndLoad(realName.toString(),
+                                                (JSONObject) currSchema
+                                                    .get("properties"),
+                                                arrValue);
                                             Statement st1 = conn
                                                 .createStatement();
                                             ResultSet rs1 = st1.executeQuery(
@@ -457,16 +462,7 @@ public class SQLiteHandler implements DatabaseHandler
                                 currSchema = JSONSchemaParser.findDef(realName,
                                     (String) currSchema.get("$ref"),
                                     schema.getSchema());
-                            /*
-                             * ((JSONObject)currTable.get(schema.getJSONName(c.
-                             * getName()))).containsKey("$ref") ?
-                             * JSONSchemaParser.findDef(null,(String)
-                             * ((JSONObject)
-                             * currTable.get(c.getName())).get("$ref"),
-                             * schema.getSchema()) : (JSONObject)
-                             * currTable.get(c.getName());
-                             */
-
+                           
                             walkAndLoad(realName.toString(),
                                 (JSONObject) currSchema.get("properties"),
                                 (JSONObject) value);
@@ -490,14 +486,6 @@ public class SQLiteHandler implements DatabaseHandler
         catch (SQLException e)
         {
             System.out.println(e.getMessage());
-        }
-        finally
-        {
-            // deleteDatabase();
-            /*
-             * try { if (conn != null) { conn.close(); } } catch (SQLException
-             * e) { System.out.println(e.getMessage()); }
-             */
         }
     }
 
