@@ -52,6 +52,7 @@ public class JSONSchemaParser
                 System.out.println("    " + c.getName());
         } 
     }
+    
     public void printRealTableNames()
     {
         for (Map.Entry<String, String> entry : realTableNames.entrySet()) {
@@ -187,70 +188,4 @@ public class JSONSchemaParser
             return findDef(name, path.substring(path.indexOf("/") + 1), 
                 (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
     }
-    
-    /**
-     * Производит построение всех возможных путей до столбца с заданным родителем
-     * 
-     * @param schema JSON-схема
-     * @param c      столбец
-     * @param paths  список возможных путей
-     * @return       список возможных путей
-     */
-    /*public static List<String> buildColumnPaths(JSONSchema objSchema, Column c, List<String> paths)
-    {
-       initSchema(objSchema);
-       buildPath(objSchema, "", c, paths);
-       return paths;
-    }*/
-    
-    /**
-     * Создает словарь путей, столбцы из одинаковой таблицы имеют один и тот же ключ
-     * 
-     * @param objSchema JSON-схема
-     * @param cols      искомые столбцы
-     */
-   /* public static void buildAndMatchAllPaths(JSONSchema objSchema, Column... cols)
-    {
-        Map<String, List<Column>> matchedPaths = new HashMap<String, List<Column>>();
-        for(Column c : cols)
-        {
-            List<String> colPaths = new LinkedList<String>();
-            buildColumnPaths(objSchema, c, colPaths);
-            for(String s : colPaths)
-            {
-                if(!matchedPaths.containsKey(s))
-                    matchedPaths.put(s, new LinkedList<Column>());
-                matchedPaths.get(s).add(c);
-            }
-        }        
-    }*/
-    
-    /**
-     * Рекурсивно строит путь к столбцу
-     * 
-     * @param schema JSON-схема
-     * @param path   текущий путь
-     * @param c      текущий столбец
-     * @param paths  список возможных путей
-     * @return       путь к столбцу
-     */
-    /*private static String buildPath(JSONSchema objSchema, String path, Column c, List<String> paths)
-    {
-        Table parentTable = c.getTable(); 
-        List<Column> possible = objSchema.getColumns(parentTable.getName());
-        
-        StringBuilder currPath = new StringBuilder("" + path); 
-        if(!path.equals(""))
-            currPath.insert(0, c.getName());
-        currPath.insert(0, "/");
-        if (possible == null)
-        {
-            paths.add(currPath.toString());
-            return ""; 
-        }
-        else
-            for(Column col : possible)
-                currPath.insert(0, buildPath(objSchema, currPath.toString(), col, paths)); 
-        return "";
-    }*/
 }
