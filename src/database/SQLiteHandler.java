@@ -153,7 +153,85 @@ public class SQLiteHandler implements DatabaseHandler
     @Override
     public void getData(Table t, Column... columns)
     {
-
+        //check that columns are actually from that table
+        try
+        {
+        StringBuilder query = new StringBuilder("SELECT * FROM \"" + t.getName() + "\";");
+        for(Column c : columns)
+        {
+            query.append("\"" + c.getName() + "\",");
+        }
+        query.setLength(query.length() - 1);
+        query.append(" FROM \"" + t.getName() + "\";");
+        
+        conn = DriverManager.getConnection(connString);
+        PreparedStatement pstmt = conn.prepareStatement(query.toString());        
+        //pstmt.setString(1, t.getName());
+        ResultSet res = pstmt.executeQuery();
+        List<String> resList = new LinkedList<String>();
+        
+        int i = 1;
+        while (res.next())
+        {
+            StringBuilder str = new StringBuilder(/*"\"" + String.valueOf(res.getLong("$id")) + "\""*/);
+            for(Column c : columns)
+            {
+                str.append(c.getName() + ": ");
+                switch(c.getType())
+                {
+                    case "string":
+                    case "array":
+                        String valStr = res.getString(c.getName());                        
+                        if (res.wasNull()) 
+                            str.append("\"null\"  ");
+                        else
+                            str.append("\"" + valStr + "\"  ");
+                        //System.out.println(valStr);
+                        break;
+                    case "integer":
+                    case "object":
+                        long valLong = res.getLong(c.getName());
+                        if (res.wasNull()) 
+                            str.append("\"null\"  ");
+                        else
+                            str.append("\"" + valLong + "\"  ");
+                        //System.out.println(valLong);
+                        break;
+                    case "number":
+                        double valDouble = res.getDouble(c.getName());
+                        if (res.wasNull()) 
+                            str.append("\"null\"  ");
+                        else
+                            str.append("\"" + valDouble + "\"  ");
+                        //System.out.println(valDouble);
+                        break;
+                    /*case "boolean":
+                     * break;*/                        
+                }
+            }
+            resList.add(str.toString());
+        }
+        for(String s : resList)
+            System.out.println(s);
+        
+        } catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        }
+        finally
+        {
+            try
+            {
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                System.out.println(e.getMessage());
+            }
+        }
     }
 
     private void insertData(String query)
