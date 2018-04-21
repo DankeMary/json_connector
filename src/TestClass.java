@@ -40,50 +40,15 @@ public class TestClass
         
         for (Table table : sortedTables)
         {
-            //dbHandler.createTable(table, schema.getColumns(table));
             Map<TableRow, Integer> rows = tablesData.get(table.getName());
-            dbHandler.uploadData(table, schema.getColumns(table), rows);            
+            dbHandler.uploadData(schema.getTableColumns(), table, rows);            
             
         }
+        /*Table testTable = new Table();
+        testTable.setName("first-address_haha");
+        dbHandler.getData(testTable, schema.getColumns(testTable));*/
     }
-    
-  //ЧТО С НИМ ДЕЛАТЬ???
-    /*public void createDatabase(JSONSchema schema)
-    {
-        try
-        {
-            connString = "jdbc:sqlite:" + location + schema.getName() + ".db";
-            conn = DriverManager.getConnection(connString);
-            for (Table t : schema.getTables())
-            {
-                String query = createTable(t,
-                    schema.getColumns(t));
-                Statement stmt = conn.createStatement();
-                stmt.execute(query);
-                stmt.close();
-            }
-            conn.close(); // is needed here? finally
-        }
-        catch (SQLException e)
-        {
-            System.out.println("createDatabase " + e.getMessage());
-        }
-        finally
-        {
-            try
-            {
-                if (conn != null)
-                {
-                    conn.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                System.out.println(e.getMessage());
-            }
-        }
-    }*/
-    
+
     /*public void deleteDatabase()
     {
         try

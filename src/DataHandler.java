@@ -35,16 +35,25 @@ public class DataHandler
         this.data = data;
         tablesData = new HashMap<>();
     }
-
+    
+    /**
+     * Запускает процесс взятия данных из JSON
+     */
     public void handleData()
     {
         Table rootTable = schema.getTables().stream()
                 .filter(table -> table.getName()
                     .equals(schema.getName().trim().toLowerCase()))
                 .findFirst().get();
-        /*TableRow rootRow = */getRow(rootTable, data);
-    }
+        getRow(rootTable, data);
+    }    
     
+    /**
+     * Создает объект строки таблицы и заполняет его данными
+     * @param table таблица
+     * @param data  JSON с данными
+     * @return      строка таблицы
+     */
     private TableRow getRow(Table table, JSONObject data)
     {
         List<Column> columns = schema.getColumns(table);
@@ -84,7 +93,8 @@ public class DataHandler
                                     else
                                     {
                                         TableRow parentRow = getRow(c.getRefTable(), arrValue);
-                                        arrayData.add(parentRow);
+                                        //arrayData.add(parentRow);
+                                        arrayData.add(parentRow.getId());
                                     }
                                 }
                             }
@@ -99,15 +109,18 @@ public class DataHandler
                         value = parentRow.getId();
                     }
                     break;
-                /*
-                 * case "boolean": query.append(" INTEGER "); break;
-                 */
+                
+                case "boolean": 
+                    if(value.equals("false"))
+                        value = 0;
+                    else
+                        value = 1; 
+                    break;                 
             }
-
             values[colIndex] = value;
             colIndex++;
         }
-
+        
         TableRow row = new TableRow();
         row.setTable(table);
         row.setValues(values);
@@ -121,7 +134,7 @@ public class DataHandler
             maybeId = id;
         }
         row.setId(maybeId);
-
+        
         return row;
     }
 }

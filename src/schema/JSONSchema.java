@@ -3,7 +3,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.json.simple.JSONObject;
@@ -15,7 +14,6 @@ import lombok.Getter;
 import lombok.Setter;
 import model.Column;
 import model.Table;
-import model.User;
 
 @Data
 public class JSONSchema
@@ -38,7 +36,6 @@ public class JSONSchema
         name = "";
         schema = null;
         tables = null;
-        //realTableNames = null;
         columns = null;
         tableColumns = null;
     }
@@ -48,36 +45,14 @@ public class JSONSchema
         this.name = name; 
         schema = objSchema;
         tables = new LinkedList<Table>(); 
-        //realTableNames = new HashMap<String, String>();
         columns = new HashMap<String, List<Column>>();
         tableColumns = new HashMap<String, List<Column>>();
         parse();
     }
-    
-   /* public String getJSONName(String defName)
-    {
-        return realTableNames.get(defName);
-    }
-    
-    public String getDefName(String jsonName)
-    {
-        for (Map.Entry<String, String> entry : realTableNames.entrySet()) {
-            if(jsonName.equals(entry.getValue()))
-                return entry.getKey();
-        }
-        return null;
-    }
-    
-    public Map<String, String> getRealTableNames()
-    {
-        return realTableNames;
-    }
-
-    public void setRealTableNames(Map<String, String> realTableNames)
-    {
-        this.realTableNames = realTableNames;
-    }*/
-
+   
+    /**
+     * Разбор схемы на таблицы и столбцы
+     */
     public void parse()
     {   
         JSONSchemaParser parser = new JSONSchemaParser(this);        
@@ -96,9 +71,14 @@ public class JSONSchema
             return null;
     }
     
-    public List<Column> getColumns(Table t)
+    /**
+     * Получение списка столбцов таблицы
+     * @param table таблица
+     * @return      список столбцов 
+     */
+    public List<Column> getColumns(Table table)
     {
-        return tableColumns.get(t.getName());
+        return tableColumns.get(table.getName());
     }
     
     //getters & setters

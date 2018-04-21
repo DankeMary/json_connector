@@ -7,7 +7,16 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(of = {"values"})
 public class TableRow
 {
+    /**
+     * id строки в таблице
+     */
     private int id;
+    /**
+     * таблица-владелец
+     */
     private Table table;
+    /**
+     * значения из строки
+     */
     private Object[] values;
 }

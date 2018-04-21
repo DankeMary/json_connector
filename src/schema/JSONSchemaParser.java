@@ -1,5 +1,4 @@
 package schema;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +16,6 @@ public class JSONSchemaParser
     private JSONObject schema;
     private String name;
     private List<Table> tables;
-    //private static Map<String, String> realTableNames;     //Def - JSON
     private Map<String, List<Column>> columns;
     private Map<String, List<Column>> tableColumns;
     
@@ -26,12 +24,13 @@ public class JSONSchemaParser
         schema = objSchema.getSchema();
         name = objSchema.getName();
         tables = objSchema.getTables();
-        //realTableNames = objSchema.getRealTableNames();
         columns = objSchema.getColumns();
-        //!!!Создать свой словарь, а потом присвоить его схеме
         tableColumns = objSchema.getTableColumns();
     }
     
+    /**
+     * Запускает процесс разбора схемы
+     */
     public void parse()
     {   
         User user = new User();
@@ -44,16 +43,11 @@ public class JSONSchemaParser
         parseProperties(rootTable, user, properties);
     }
     
-    public void printTablesColumns()
-    {
-        for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet()) {
-            System.out.println("Table: " + entry.getKey());
-            List<Column> cols = entry.getValue();
-            for(Column c : cols)
-                System.out.println("    " + c.getName());
-        } 
-    }
-        
+    /**
+     * Вычисление уровня таблицы
+     * @param table таблица
+     * @return      уровень
+     */
     public int getLevel(Table table)
     {
         List<Column> list = tableColumns.get(table.getName());
@@ -69,6 +63,7 @@ public class JSONSchemaParser
 
         return level + 1;
     }
+    
     /**
      * Разбор пар в properties на столбцы и таблицы
      * 
@@ -89,7 +84,6 @@ public class JSONSchemaParser
             
             if (colData.containsKey("$ref"))
             {
-                //String path = (String) colData.get("$ref");
                 colData = findDef(realName, (String) colData.get("$ref"), schema);             
             }
             newCol = handleColumn(parentTable, key, colData);
@@ -102,11 +96,8 @@ public class JSONSchemaParser
                 }
                 
                 if (colData.containsKey("$ref"))
-                {
-                    //String path = (String) colData.get("$ref");                   
-                    colData = findDef(realName, (String) colData.get("$ref"), schema);
-                    /*if (tableColumns.containsKey(realName.toString()))
-                        continue; */                                  
+                {            
+                    colData = findDef(realName, (String) colData.get("$ref"), schema); 
                 }               
                 
                 if (colData.get("type").equals("object"))
@@ -118,13 +109,15 @@ public class JSONSchemaParser
                     {
                         refTable = handleTable(realName.toString(), user,
                             colData);
+                        
                         parseProperties(refTable, user,
                             (JSONObject) colData.get("properties"));
-                        //realTableNames.put(realName.toString(), key);
+                        if(newCol.getType().equals("array"))
+                        {
+                            handleCrossTable(user, parentTable, refTable);
+                        }
                     }
-                    newCol.setRefTable(refTable);
-                    /*if (tableColumns.containsKey(realName.toString()))
-                        continue;*/                    
+                    newCol.setRefTable(refTable);                                      
                 }
             }            
         }
@@ -148,34 +141,69 @@ public class JSONSchemaParser
         newCol.setTable(parentTable);
         if (!columns.containsKey(name))        
             columns.put(name, new LinkedList<Column>());
-        columns.get(name).add(newCol);
-     
+        columns.get(name).add(newCol);     
         tableColumns.get(parentTable.getName()).add(newCol);
+        
         return newCol;
     }
 
     /**
      * Создает объект таблицы, заполняет его данными и добавляет в список таблиц
      * 
-     * @param name    имя таблицы
+     * @param tableName    имя таблицы
      * @param user    пользователь-владелец
-     * @param tabData данные о таблице
+     * @param tableData данные о таблице
      * @return        экземпляр таблицы с данными
      */
-    private Table handleTable(String name, User user, JSONObject tabData)
+    private Table handleTable(String tableName, User user, JSONObject tableData)
     {
-        name = name.trim().toLowerCase();
+        tableName = tableName.trim().toLowerCase();
         Table newTable = new Table();
-        newTable.setName(name);
+        newTable.setName(tableName);
         newTable.setType(Table.TYPE_TABLE);
         newTable.setOwner(user);
-        newTable.setComment((String) tabData.get("description"));
-        tables.add(0, newTable);
-        tableColumns.put(name, new LinkedList<Column>());           
+        newTable.setComment((String) tableData.get("description"));
+        tables.add(newTable);
+        tableColumns.put(tableName, new LinkedList<Column>());           
         
         return newTable;
     }
-
+    
+    /**
+     * Создает промежуточную таблицу для хранения массивов
+     * @param user       пользователь-владелец
+     * @param leftTable  таблица-владелец
+     * @param rightTable таблица-потомок
+     */
+    private void handleCrossTable(User user, Table leftTable, Table rightTable)
+    {
+        String tableName = leftTable.getName() + "_" + rightTable.getName();
+        Table table = new Table();
+        table.setName(tableName);
+        table.setType(Table.TYPE_TABLE);
+        table.setOwner(user);
+        tables.add(table);
+        tableColumns.put(tableName, new LinkedList<Column>()); 
+        
+        Column leftColumn = new Column();
+        leftColumn.setName(leftTable.getName() + "_id");        
+        leftColumn.setType("object");
+        leftColumn.setRefTable(leftTable);
+        tableColumns.get(tableName).add(leftColumn);
+        if (!columns.containsKey(leftColumn.getName()))        
+            columns.put(leftColumn.getName(), new LinkedList<Column>());
+        columns.get(leftColumn.getName()).add(leftColumn);
+        
+        Column rightColumn = new Column();        
+        rightColumn.setName(rightTable.getName() + "_id");        
+        rightColumn.setType("object");        
+        rightColumn.setRefTable(rightTable);       
+        tableColumns.get(tableName).add(rightColumn);        
+        if (!columns.containsKey(rightColumn.getName()))        
+            columns.put(rightColumn.getName(), new LinkedList<Column>());
+        columns.get(rightColumn.getName()).add(leftColumn);
+    }
+    
     /**
      * Поиск значения ключа по заданной ссылке
      * 
@@ -185,25 +213,24 @@ public class JSONSchemaParser
      * @return     значение ключа по ссылке
      */
     public JSONObject findDef(StringBuilder name, String path, JSONObject obj)
-    {
+    {        
         if (path == null || path.isEmpty())
             return null;
-        if (path.indexOf("/") == -1)
-        {   
-            obj = (JSONObject) obj.get(path);
-            if(obj.containsKey("$ref"))
-                return findDef(name, (String) obj.get("$ref"), schema);        
-            else
-            {
-                name.setLength(0);
-                name.append(path);
-                return obj;
-            }
+    
+        String[] splitPath = path.split("/");
+        for(String item : splitPath)
+        {
+            if(item.equals("#"))
+                continue;
+            obj = (JSONObject) obj.get(item);
         }
-        if (path.substring(0, 1).equals("#"))
-            return findDef(name, path.substring(path.indexOf("/") + 1), obj);
+        if(obj.containsKey("$ref"))
+            return findDef(name, (String) obj.get("$ref"), schema);        
         else
-            return findDef(name, path.substring(path.indexOf("/") + 1), 
-                (JSONObject) obj.get(path.substring(0, path.indexOf("/"))));
+        {
+            name.setLength(0);
+            name.append(path.substring(path.lastIndexOf("/") + 1));
+            return obj;
+        }
     }
 }
