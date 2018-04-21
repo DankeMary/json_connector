@@ -8,8 +8,8 @@ import schema.JSONSchema;
 
 public interface TableFetcher
 {    
-    List<Table> getTables(JSONSchema schema);
+    /*List<Table> getTables(JSONSchema schema);
     List<Column> getColumns(JSONSchema schema);
     void getAllData(JSONSchema schema, JSONObject json);
-    void getData(Column... columns);
+    void getData(Column... columns);*/
 }

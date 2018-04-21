@@ -3,20 +3,34 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import org.json.simple.JSONObject;
 
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import model.Column;
 import model.Table;
 import model.User;
 
+@Data
 public class JSONSchema
 {    
     private String name;
     private JSONObject schema;
+    //@Getter(AccessLevel.NONE)
+    //@Setter(AccessLevel.NONE) 
     private List<Table> tables;
-    private Map<String, String> realTableNames;
+    //private Map<String, String> realTableNames;
+    //@Getter(AccessLevel.NONE)
+    //@Setter(AccessLevel.NONE)
     private Map<String, List<Column>> columns;
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private Map<String, List<Column>> tableColumns;     
 
     public JSONSchema()
@@ -24,7 +38,7 @@ public class JSONSchema
         name = "";
         schema = null;
         tables = null;
-        realTableNames = null;
+        //realTableNames = null;
         columns = null;
         tableColumns = null;
     }
@@ -34,13 +48,13 @@ public class JSONSchema
         this.name = name; 
         schema = objSchema;
         tables = new LinkedList<Table>(); 
-        realTableNames = new HashMap<String, String>();
+        //realTableNames = new HashMap<String, String>();
         columns = new HashMap<String, List<Column>>();
         tableColumns = new HashMap<String, List<Column>>();
         parse();
     }
     
-    public String getJSONName(String defName)
+   /* public String getJSONName(String defName)
     {
         return realTableNames.get(defName);
     }
@@ -62,7 +76,7 @@ public class JSONSchema
     public void setRealTableNames(Map<String, String> realTableNames)
     {
         this.realTableNames = realTableNames;
-    }
+    }*/
 
     public void parse()
     {   
@@ -70,8 +84,25 @@ public class JSONSchema
         parser.parse();
     }
     
+    public Table getTable(String name)
+    {
+        Optional<Table> table = tables
+                .stream()
+                .filter(t -> t.getName().equals(name))
+                .findFirst();
+        if(table.isPresent())
+            return table.get();          
+        else 
+            return null;
+    }
+    
+    public List<Column> getColumns(Table t)
+    {
+        return tableColumns.get(t.getName());
+    }
+    
     //getters & setters
-    public String getName()
+    /*public String getName()
     {
         return name;
     }
@@ -109,14 +140,15 @@ public class JSONSchema
     {
         this.columns = columns;
     }  
-    public List<Column> getAllColumnsListed()
+    
+    /*public List<Column> getAllColumnsListed()
     {
         List<Column> res = new LinkedList<Column>();
         
         for (Map.Entry<String, List<Column>> entry : tableColumns.entrySet())            
             res.addAll(entry.getValue());
         return res;
-    }    
+    } 
     
     public List<Column> getColumns(Table t)
     {
@@ -126,15 +158,15 @@ public class JSONSchema
     public List<Column> getColumns(String name)
     {
         return columns.get(name);
-    }
+    }*/
     
     public Map<String, List<Column>> getTableColumns()
     {
         return tableColumns;
     }
-
+/*
     public void setTableColumns(Map<String, List<Column>> tableColumns)
     {
         this.tableColumns = tableColumns;
-    }   
+    }*/   
 }

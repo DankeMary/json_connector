@@ -14,20 +14,21 @@ public class JSONSchemaParser
 {
     public static final String USER_NAME = "JSON";
     
-    private static JSONObject schema;
-    private static String name;
-    private static List<Table> tables;
-    private static Map<String, String> realTableNames;     //Def - JSON
-    private static Map<String, List<Column>> columns;
-    private static Map<String, List<Column>> tableColumns;
+    private JSONObject schema;
+    private String name;
+    private List<Table> tables;
+    //private static Map<String, String> realTableNames;     //Def - JSON
+    private Map<String, List<Column>> columns;
+    private Map<String, List<Column>> tableColumns;
     
     public JSONSchemaParser(JSONSchema objSchema)
     {
         schema = objSchema.getSchema();
         name = objSchema.getName();
         tables = objSchema.getTables();
-        realTableNames = objSchema.getRealTableNames();
+        //realTableNames = objSchema.getRealTableNames();
         columns = objSchema.getColumns();
+        //!!!Создать свой словарь, а потом присвоить его схеме
         tableColumns = objSchema.getTableColumns();
     }
     
@@ -52,15 +53,22 @@ public class JSONSchemaParser
                 System.out.println("    " + c.getName());
         } 
     }
-    
-    public void printRealTableNames()
+        
+    public int getLevel(Table table)
     {
-        for (Map.Entry<String, String> entry : realTableNames.entrySet()) {
-            System.out.println("Real name: " + entry.getKey());
-            System.out.println("    JSON name: " + entry.getValue());
+        List<Column> list = tableColumns.get(table.getName());
+        int level = 0;
+        for (Column column : list)
+        {
+            Table refTable = column.getRefTable();
+            if (refTable != null)
+            {
+                level = Math.max(getLevel(refTable), level);
+            }
         }
+
+        return level + 1;
     }
-    
     /**
      * Разбор пар в properties на столбцы и таблицы
      * 
@@ -68,12 +76,13 @@ public class JSONSchemaParser
      * @param user        пользователь-владелец
      * @param props       множество столбцов таблицы
      */
-    private static void parseProperties(Table parentTable, User user, JSONObject props)
+    private void parseProperties(Table parentTable, User user, JSONObject props)
     {
         for (Object keyObj : props.keySet())
         {
             String key = (String) keyObj;
-            JSONObject colData = (JSONObject) props.get(key);
+            Object value = props.get(key);
+            JSONObject colData = (JSONObject)value;
             Column newCol;
 
             StringBuilder realName = new StringBuilder();
@@ -101,12 +110,21 @@ public class JSONSchemaParser
                 }               
                 
                 if (colData.get("type").equals("object"))
-                {           
-                    if (tableColumns.containsKey(realName.toString()))
-                        continue;
-                    Table newTable = handleTable(realName.toString(), user, colData);  
-                    realTableNames.put(realName.toString(), key);
-                    parseProperties(newTable, user, (JSONObject) colData.get("properties"));
+                {         
+                    Table refTable = tables.stream().filter(
+                        table -> table.getName().equals(realName.toString()))
+                        .findFirst().orElse(null);
+                    if (refTable == null)
+                    {
+                        refTable = handleTable(realName.toString(), user,
+                            colData);
+                        parseProperties(refTable, user,
+                            (JSONObject) colData.get("properties"));
+                        //realTableNames.put(realName.toString(), key);
+                    }
+                    newCol.setRefTable(refTable);
+                    /*if (tableColumns.containsKey(realName.toString()))
+                        continue;*/                    
                 }
             }            
         }
@@ -120,7 +138,7 @@ public class JSONSchemaParser
      * @param colData     данные о столбце
      * @return            экземпляр столбца с данными
      */
-    private static Column handleColumn(Table parentTable, String name, JSONObject colData)
+    private Column handleColumn(Table parentTable, String name, JSONObject colData)
     {
         Column newCol = new Column();
         name = name.trim().toLowerCase();
@@ -144,7 +162,7 @@ public class JSONSchemaParser
      * @param tabData данные о таблице
      * @return        экземпляр таблицы с данными
      */
-    private static Table handleTable(String name, User user, JSONObject tabData)
+    private Table handleTable(String name, User user, JSONObject tabData)
     {
         name = name.trim().toLowerCase();
         Table newTable = new Table();
@@ -166,7 +184,7 @@ public class JSONSchemaParser
      * @param obj  текущая область поиска
      * @return     значение ключа по ссылке
      */
-    public static JSONObject findDef(StringBuilder name, String path, JSONObject obj)
+    public JSONObject findDef(StringBuilder name, String path, JSONObject obj)
     {
         if (path == null || path.isEmpty())
             return null;

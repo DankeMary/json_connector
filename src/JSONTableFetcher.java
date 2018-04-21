@@ -21,10 +21,10 @@ public class JSONTableFetcher implements TableFetcher
         //return schema.getListedTables();
     }
     
-    public List<Column> getColumns(JSONSchema schema)
+    /*public List<Column> getColumns(JSONSchema schema)
     {
         return schema.getAllColumnsListed();
-    }
+    }*/
        
     /**
      * Берет значение из столбца по указанному пути
