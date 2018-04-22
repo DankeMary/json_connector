@@ -25,9 +25,9 @@ public class SchemaUtils
     {
         Path p = Paths.get(path);
         String fname = p.getFileName().toString();
-        int pos = fname.lastIndexOf(".");
-        if (pos > 0)
-            fname = fname.substring(0, pos);
+        int dotPos = fname.lastIndexOf(".");
+        if (dotPos > 0)
+            fname = fname.substring(0, dotPos);
         return fname;
     }
 
@@ -46,13 +46,13 @@ public class SchemaUtils
         }
         catch (IOException e)
         {
-            e.printStackTrace();
-            return null;
+            System.out.println(e.getMessage());
+            throw new RuntimeException();
         }
         catch (ParseException e)
         {
-            e.printStackTrace();
-            return null;
+            System.out.println(e.getMessage());
+            throw new RuntimeException();
         }
     }
 }

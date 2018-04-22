@@ -14,6 +14,7 @@ import org.sqlite.JDBC;
 
 import com.google.common.base.Joiner;
 
+import handlers.DatabaseHandler;
 import model.Column;
 import model.Table;
 import model.TableRow;
@@ -50,12 +51,26 @@ public class SQLiteHandler implements DatabaseHandler
             location = DB_LOCATION;
             connString = "jdbc:sqlite:" + location + dbName + ".db";
             conn = DriverManager.getConnection(connString);
-            conn.close();
         }
         catch (SQLException e)
         {
             System.out.println(e.getMessage());
             throw new RuntimeException();
+        }
+        finally
+        {
+            try
+            {
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                System.out.println(e.getMessage());
+                throw new RuntimeException();
+            }
         }
     }
 
@@ -68,27 +83,41 @@ public class SQLiteHandler implements DatabaseHandler
             String query = createTableQuery(table, columns);
             PreparedStatement pstmt = conn.prepareStatement(query);
             pstmt.executeUpdate();
-            conn.close();
         }
         catch (SQLException e)
         {
             System.out.println(e.getMessage());
             throw new RuntimeException();
         }
+        finally
+        {
+            try
+            {
+                if (conn != null)
+                {
+                    conn.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                System.out.println(e.getMessage());
+                throw new RuntimeException();
+            }
+        }
     }
 
     /**
      * Создает запрос для создания таблицы
-     * @param t    таблица
-     * @param cols столбцы таблицы
+     * @param table    таблица
+     * @param columns столбцы таблицы
      * @return     строка с запросом
      */
-    private String createTableQuery(Table t, List<Column> cols)
+    private String createTableQuery(Table table, List<Column> columns)
     {
         StringBuilder query = new StringBuilder("CREATE TABLE \"");
-        query = query.append(t.getName() + "\" (");
+        query = query.append(table.getName() + "\" (");
         query.append(COLUMN_ID + " INTEGER PRIMARY KEY ");
-        for (Column c : cols)
+        for (Column c : columns)
         {
             query.append(", \"" + c.getName() + "\" ");
             switch (c.getType())
@@ -120,7 +149,7 @@ public class SQLiteHandler implements DatabaseHandler
      * Проверяет столбцы на принадлежность таблице
      * @param table   таблица
      * @param columns столбцы
-     * @return        true - все принадлежат, false -  в противном случае 
+     * @return        true - все принадлежат, false -  хотя бы 1 не принадлежит
      */
     private boolean checkColumns(Table table, Column... columns)
     {
@@ -133,12 +162,11 @@ public class SQLiteHandler implements DatabaseHandler
     }
 
     @Override
-    public List<String> getData(Table t, Column... columns)
+    public List<String> getData(Table table, Column... columns)
     {
-        if (!checkColumns(t, columns))
+        if (!checkColumns(table, columns))
         {
-            System.out
-                .println("1 or more columns don't belong to the given table!");
+            System.out.println("1 or more columns don't belong to the table!");
             throw new RuntimeException();
         }
         else
@@ -150,7 +178,7 @@ public class SQLiteHandler implements DatabaseHandler
                     query.append("\"" + c.getName() + "\",");
                 }
                 query.setLength(query.length() - 1);
-                query.append(" FROM \"" + t.getName() + "\";");
+                query.append(" FROM \"" + table.getName() + "\";");
 
                 conn = DriverManager.getConnection(connString);
                 PreparedStatement pstmt = conn
@@ -167,8 +195,10 @@ public class SQLiteHandler implements DatabaseHandler
                         str.append(c.getName() + ": ");
                         switch (c.getType())
                         {
+                            case "array":
+                                str.append("[array],  ");
+                                break;
                             case "string":
-                                // case "array":
                                 String valStr = res.getString(c.getName());
                                 if (res.wasNull())
                                     str.append("\"null\",  ");
@@ -331,11 +361,11 @@ public class SQLiteHandler implements DatabaseHandler
     }
 
     @Override
-    public List<String> getData(Table t, List<Column> columns)
+    public List<String> getData(Table table, List<Column> columns)
     {
         try
         {
-            String query = "SELECT * FROM \"" + t.getName() + "\";";
+            String query = "SELECT * FROM \"" + table.getName() + "\";";
             conn = DriverManager.getConnection(connString);
             PreparedStatement pstmt = conn.prepareStatement(query);
             ResultSet res = pstmt.executeQuery();

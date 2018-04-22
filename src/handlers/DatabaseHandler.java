@@ -1,4 +1,4 @@
-package database;
+package handlers;
 
 import java.util.List;
 import java.util.Map;
@@ -10,22 +10,22 @@ import model.TableRow;
 public interface DatabaseHandler
 {
     /**Создает таблицу в базе данных
-     * @param t    таблица
-     * @param cols столбцы таблицы
+     * @param table    таблица
+     * @param columns столбцы таблицы
      */
-    void createTable(Table t, List<Column> cols);
+    void createTable(Table table, List<Column> columns);
     /**
      * Возвращает значения всех столбцов из таблицы
-     * @param t       таблица
+     * @param table       таблица
      * @param columns список всех столбцов
      */
-    List<String> getData(Table t, Column... columns);
+    List<String> getData(Table table, Column... columns);
     /**
      * Возвращает значения указанных столбцов из таблицы
-     * @param t       таблица
+     * @param table       таблица
      * @param columns столбцы
      */
-    List<String> getData(Table t, List<Column> columns);
+    List<String> getData(Table table, List<Column> columns);
     /**
      * Загружает данные в таблицу
      * @param tableColumns словарь таблиц и столбцов

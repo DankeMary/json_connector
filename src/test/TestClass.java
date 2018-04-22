@@ -1,4 +1,4 @@
-import java.util.LinkedList;
+package test;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.json.simple.JSONObject;
 
 import database.SQLiteHandler;
+import handlers.DataHandler;
 import model.Table;
 import model.TableRow;
 import schema.JSONSchema;
@@ -14,8 +15,6 @@ import utils.SchemaUtils;
 
 public class TestClass
 {
-    //schemaPath = "e:\\address.json"
-    //dataPath = "e:\\try.json"
     public static void runTest(String schemaPath, String dataPath)
     { 
         String dbName = SchemaUtils.getTableName(schemaPath);
@@ -33,7 +32,7 @@ public class TestClass
         
         SQLiteHandler dbHandler = new SQLiteHandler(dbName);
         
-        for(Table table: sortedTables)
+        for(Table table : sortedTables)
         {
             dbHandler.createTable(table, schema.getColumns(table));
         }
@@ -41,32 +40,7 @@ public class TestClass
         for (Table table : sortedTables)
         {
             Map<TableRow, Integer> rows = tablesData.get(table.getName());
-            dbHandler.uploadData(schema.getTableColumns(), table, rows);            
-            
+            dbHandler.uploadData(schema.getTableColumns(), table, rows);           
         }
-        /*Table testTable = new Table();
-        testTable.setName("first-address_haha");
-        dbHandler.getData(testTable, schema.getColumns(testTable));*/
-    }
-
-    /*public void deleteDatabase()
-    {
-        try
-        {
-            conn.close();
-            File file = new File(location + schema.getName() + ".db");
-            if (file.delete())
-            {
-                System.out.println(file.getName() + " is deleted!");
-            }
-            else
-            {
-                System.out.println("Delete operation is failed.");
-            }
-        }
-        catch (Exception e)
-        {
-            System.out.println(e.getMessage());
-        }
-    }*/
+    }    
 }

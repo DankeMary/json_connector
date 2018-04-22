@@ -18,16 +18,16 @@ import model.Table;
 @Data
 public class JSONSchema
 {    
+    @Setter(AccessLevel.NONE)
     private String name;
+    @Getter(AccessLevel.PACKAGE)
+    @Setter(AccessLevel.NONE)
     private JSONObject schema;
-    //@Getter(AccessLevel.NONE)
-    //@Setter(AccessLevel.NONE) 
+    @Setter(AccessLevel.NONE) 
     private List<Table> tables;
-    //private Map<String, String> realTableNames;
-    //@Getter(AccessLevel.NONE)
-    //@Setter(AccessLevel.NONE)
+    @Getter(AccessLevel.PACKAGE)
+    @Setter(AccessLevel.NONE)
     private Map<String, List<Column>> columns;
-    @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private Map<String, List<Column>> tableColumns;     
 
@@ -140,10 +140,10 @@ public class JSONSchema
         return columns.get(name);
     }*/
     
-    public Map<String, List<Column>> getTableColumns()
+    /*public Map<String, List<Column>> getTableColumns()
     {
         return tableColumns;
-    }
+    }*/
 /*
     public void setTableColumns(Map<String, List<Column>> tableColumns)
     {

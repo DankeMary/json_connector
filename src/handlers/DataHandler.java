@@ -1,3 +1,4 @@
+package handlers;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,21 +72,21 @@ public class DataHandler
                     {
                         List<Object> arrayData = new ArrayList<>();
                         
-                        JSONArray arr = (JSONArray) value;
-                        if (arr.size() > 0)
+                        JSONArray array = (JSONArray) value;
+                        if (array.size() > 0)
                         {
                             if (c.getRefTable() == null)
                             {
-                                for (int i = 0; i < arr.size(); i++)
+                                for (int i = 0; i < array.size(); i++)
                                 {
-                                    arrayData.add(arr.get(i));
+                                    arrayData.add(array.get(i));
                                 }
                             }
                             else
                             {
-                                for (int i = 0; i < arr.size(); i++)
+                                for (int i = 0; i < array.size(); i++)
                                 {
-                                    JSONObject arrValue = (JSONObject) arr.get(i);
+                                    JSONObject arrValue = (JSONObject) array.get(i);
                                     if (arrValue == null)
                                     {
                                         arrayData.add(null);
@@ -108,8 +109,7 @@ public class DataHandler
                         TableRow parentRow = getRow(c.getRefTable(),(JSONObject) value);
                         value = parentRow.getId();
                     }
-                    break;
-                
+                    break;                
                 case "boolean": 
                     if(value.equals("false"))
                         value = 0;
