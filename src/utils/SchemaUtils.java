@@ -19,7 +19,7 @@ public class SchemaUtils
      * Берет имя таблицы из пути к файлу схемы
      * 
      * @param path путь к файлу
-     * @return     имя таблицы
+     * @return имя таблицы
      */
     public static String getTableName(String path)
     {
@@ -35,7 +35,7 @@ public class SchemaUtils
      * Загрузка JSON-схемы из файла
      * 
      * @param path путь к файлу
-     * @return     JSON-схема
+     * @return JSON-схема
      */
     public static JSONObject getJson(String path)
     {

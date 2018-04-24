@@ -108,17 +108,20 @@ public class SQLiteHandler implements DatabaseHandler
 
     /**
      * Создает запрос для создания таблицы
-     * @param table    таблица
+     * 
+     * @param table таблица
      * @param columns столбцы таблицы
-     * @return     строка с запросом
+     * @return строка с запросом
      */
     private String createTableQuery(Table table, List<Column> columns)
     {
-        StringBuilder query = new StringBuilder("CREATE TABLE \"");
+        StringBuilder query = new StringBuilder(
+            "CREATE TABLE IF NOT EXISTS \"");
         query = query.append(table.getName() + "\" (");
         query.append(COLUMN_ID + " INTEGER PRIMARY KEY ");
         for (Column c : columns)
         {
+            Table refTable = c.getRefTable();
             query.append(", \"" + c.getName() + "\" ");
             switch (c.getType())
             {
@@ -126,8 +129,13 @@ public class SQLiteHandler implements DatabaseHandler
                     query.append(" TEXT ");
                     break;
                 case "integer":
-                case "array":
                     query.append(" INTEGER ");
+                    if (refTable != null)
+                        query.append(" REFERENCES \"" + refTable.getName()
+                            + "\"(" + COLUMN_ID + ") ");
+                    break;
+                case "array":
+                    query.append(" TEXT ");
                     break;
                 case "number":
                     query.append(" REAL ");
@@ -147,9 +155,10 @@ public class SQLiteHandler implements DatabaseHandler
 
     /**
      * Проверяет столбцы на принадлежность таблице
-     * @param table   таблица
+     * 
+     * @param table таблица
      * @param columns столбцы
-     * @return        true - все принадлежат, false -  хотя бы 1 не принадлежит
+     * @return true - все принадлежат, false - хотя бы 1 не принадлежит
      */
     private boolean checkColumns(Table table, Column... columns)
     {
@@ -166,7 +175,8 @@ public class SQLiteHandler implements DatabaseHandler
     {
         if (!checkColumns(table, columns))
         {
-            System.out.println("1 or more columns don't belong to the table!");
+            System.out.println(
+                "1 или более столбцовне принадлежат указанной таблице!");
             throw new RuntimeException();
         }
         else
@@ -192,46 +202,47 @@ public class SQLiteHandler implements DatabaseHandler
                     StringBuilder str = new StringBuilder();
                     for (Column c : columns)
                     {
-                        str.append(c.getName() + ": ");
                         switch (c.getType())
                         {
                             case "array":
-                                str.append("[array],  ");
+                                Object array = res.getObject(c.getName());
+                                if (array == null)
+                                    str.append("\"null\"  ");
+                                else
+                                    str.append("\"[array]\"  ");
                                 break;
                             case "string":
                                 String valStr = res.getString(c.getName());
                                 if (res.wasNull())
-                                    str.append("\"null\",  ");
+                                    str.append("\"null\"  ");
                                 else
-                                    str.append("\"" + valStr + "\",  ");
+                                    str.append("\"" + valStr + "\"  ");
                                 break;
                             case "integer":
                             case "object":
                                 long valLong = res.getLong(c.getName());
                                 if (res.wasNull())
-                                    str.append("\"null\" , ");
+                                    str.append("\"null\"  ");
                                 else
-                                    str.append("\"" + valLong + "\",  ");
+                                    str.append("\"" + valLong + "\"  ");
                                 break;
                             case "number":
                                 double valDouble = res.getDouble(c.getName());
                                 if (res.wasNull())
-                                    str.append("\"null\",  ");
+                                    str.append("\"null\"  ");
                                 else
-                                    str.append("\"" + valDouble + "\",  ");
+                                    str.append("\"" + valDouble + "\"  ");
                                 break;
-
                             case "boolean":
                                 boolean valBoolean = res
                                     .getBoolean(c.getName());
                                 if (res.wasNull())
-                                    str.append("\"null\",  ");
+                                    str.append("\"null\"  ");
                                 else
-                                    str.append("\"" + valBoolean + "\",  ");
+                                    str.append("\"" + valBoolean + "\"  ");
                                 break;
                         }
                     }
-                    str.setLength(str.lastIndexOf(","));
                     resList.add(str.toString());
                 }
                 return resList;
@@ -267,8 +278,9 @@ public class SQLiteHandler implements DatabaseHandler
             conn = DriverManager.getConnection(connString);
             conn.setAutoCommit(false);
 
-            List<Column> columns = tableColumns.get(table.getName());
-            String query = createInsertQuery(table, columns);
+            String tableName = table.getName();
+            List<Column> columns = tableColumns.get(tableName);
+            String query = createInsertQuery(tableName, columns);
 
             if (rows != null)
                 try (PreparedStatement stmt = conn.prepareStatement(query))
@@ -287,12 +299,24 @@ public class SQLiteHandler implements DatabaseHandler
                             }
                             else if (col.getType().equals("array"))
                             {
-                                Table refTable = new Table();
-                                refTable.setName(table.getName() + "_"
-                                    + col.getRefTable().getName());
-                                String crossTableQuery = createInsertQuery(
-                                    refTable,
-                                    tableColumns.get(refTable.getName()));
+                                String crossTableName, crossTableQuery;
+                                if (col.getRefTable() != null)
+                                {
+                                    crossTableName = tableName + "_"
+                                        + col.getRefTable().getName();
+                                    crossTableQuery = createInsertQuery(
+                                        crossTableName,
+                                        tableColumns.get(crossTableName));
+                                }
+                                else
+                                {
+                                    crossTableName = tableName + "_"
+                                        + col.getName();
+                                    crossTableQuery = createInsertQuery(
+                                        crossTableName,
+                                        tableColumns.get(crossTableName));
+                                }
+
                                 PreparedStatement stmt1 = conn
                                     .prepareStatement(crossTableQuery);
                                 for (Object o : (List<Object>) value)
@@ -302,7 +326,8 @@ public class SQLiteHandler implements DatabaseHandler
                                     stmt1.addBatch();
                                 }
                                 stmt1.executeBatch();
-                                stmt.setNull(colIndex, Types.INTEGER);
+
+                                stmt.setObject(colIndex, "[array]");
                             }
                             else
                             {
@@ -341,14 +366,15 @@ public class SQLiteHandler implements DatabaseHandler
 
     /**
      * Создает строку запроса для вставки данных в таблицу
-     * @param table   таблица
+     * 
+     * @param table таблица
      * @param columns столбцы таблицы
-     * @return        строка запроса
+     * @return строка запроса
      */
-    private String createInsertQuery(Table table, List<Column> columns)
+    private String createInsertQuery(String tableName, List<Column> columns)
     {
         StringBuilder query = new StringBuilder(
-            "INSERT INTO \"" + table.getName() + "\"(" + COLUMN_ID + ", ");
+            "INSERT INTO \"" + tableName + "\"(" + COLUMN_ID + ", ");
 
         Joiner.on(',').appendTo(query, columns.stream()
             .map(column -> "\"" + column.getName() + "\"").iterator());

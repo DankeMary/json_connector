@@ -1,4 +1,6 @@
 package handlers;
+
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,12 +14,13 @@ import model.Table;
 import model.TableRow;
 import schema.JSONSchema;
 
+
 public class DataHandler
 {
     private JSONSchema schema;
     private JSONObject data;
     private Map<String, Map<TableRow, Integer>> tablesData;
-    
+
     public Map<String, Map<TableRow, Integer>> getTablesData()
     {
         return tablesData;
@@ -28,32 +31,33 @@ public class DataHandler
         schema = null;
         data = null;
         tablesData = new HashMap<>();
-    }    
-    
+    }
+
     public DataHandler(JSONSchema schema, JSONObject data)
     {
         this.schema = schema;
         this.data = data;
         tablesData = new HashMap<>();
     }
-    
+
     /**
      * Запускает процесс взятия данных из JSON
      */
     public void handleData()
     {
         Table rootTable = schema.getTables().stream()
-                .filter(table -> table.getName()
-                    .equals(schema.getName().trim().toLowerCase()))
-                .findFirst().get();
+            .filter(table -> table.getName()
+                .equals(schema.getName().trim().toLowerCase()))
+            .findFirst().get();
         getRow(rootTable, data);
-    }    
-    
+    }
+
     /**
      * Создает объект строки таблицы и заполняет его данными
+     * 
      * @param table таблица
-     * @param data  JSON с данными
-     * @return      строка таблицы
+     * @param data JSON с данными
+     * @return строка таблицы
      */
     private TableRow getRow(Table table, JSONObject data)
     {
@@ -61,8 +65,8 @@ public class DataHandler
         int colCount = columns.size();
         Object[] values = new Object[colCount];
         int colIndex = 0;
-        
-        for(Column c : columns)
+
+        for (Column c : columns)
         {
             Object value = data.get(c.getName());
             switch (c.getType())
@@ -71,7 +75,7 @@ public class DataHandler
                     if (value != null)
                     {
                         List<Object> arrayData = new ArrayList<>();
-                        
+
                         JSONArray array = (JSONArray) value;
                         if (array.size() > 0)
                         {
@@ -86,15 +90,16 @@ public class DataHandler
                             {
                                 for (int i = 0; i < array.size(); i++)
                                 {
-                                    JSONObject arrValue = (JSONObject) array.get(i);
+                                    JSONObject arrValue = (JSONObject) array
+                                        .get(i);
                                     if (arrValue == null)
                                     {
                                         arrayData.add(null);
                                     }
                                     else
                                     {
-                                        TableRow parentRow = getRow(c.getRefTable(), arrValue);
-                                        //arrayData.add(parentRow);
+                                        TableRow parentRow = getRow(
+                                            c.getRefTable(), arrValue);
                                         arrayData.add(parentRow.getId());
                                     }
                                 }
@@ -106,21 +111,22 @@ public class DataHandler
                 case "object":
                     if (value != null)
                     {
-                        TableRow parentRow = getRow(c.getRefTable(),(JSONObject) value);
+                        TableRow parentRow = getRow(c.getRefTable(),
+                            (JSONObject) value);
                         value = parentRow.getId();
                     }
-                    break;                
-                case "boolean": 
-                    if(value.equals("false"))
+                    break;
+                case "boolean":
+                    if (value.equals("false"))
                         value = 0;
                     else
-                        value = 1; 
-                    break;                 
+                        value = 1;
+                    break;
             }
             values[colIndex] = value;
             colIndex++;
         }
-        
+
         TableRow row = new TableRow();
         row.setTable(table);
         row.setValues(values);
@@ -134,7 +140,7 @@ public class DataHandler
             maybeId = id;
         }
         row.setId(maybeId);
-        
+
         return row;
     }
 }
