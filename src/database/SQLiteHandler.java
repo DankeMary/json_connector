@@ -1,6 +1,8 @@
 package database;
 
 
+import java.io.File;
+import java.nio.file.FileAlreadyExistsException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -14,10 +16,10 @@ import org.sqlite.JDBC;
 
 import com.google.common.base.Joiner;
 
-import handlers.DatabaseHandler;
 import model.Column;
 import model.Table;
 import model.TableRow;
+import utils.SchemaUtils;
 
 
 public class SQLiteHandler implements DatabaseHandler
@@ -47,16 +49,24 @@ public class SQLiteHandler implements DatabaseHandler
     {
         try
         {
+            File f = new File(location + dbName + ".db");
+            if(f.exists())
+                throw new FileAlreadyExistsException("База данных с таким именем уже существует!");
             DriverManager.registerDriver(new JDBC());
             location = DB_LOCATION;
             connString = "jdbc:sqlite:" + location + dbName + ".db";
             conn = DriverManager.getConnection(connString);
         }
-        catch (SQLException e)
+        catch (SQLException sqlE)
+        {
+            System.out.println(sqlE.getMessage());
+            throw new RuntimeException();
+        }
+        catch (Exception e)
         {
             System.out.println(e.getMessage());
             throw new RuntimeException();
-        }
+        }        
         finally
         {
             try
@@ -152,31 +162,15 @@ public class SQLiteHandler implements DatabaseHandler
         query.append(");");
         return query.toString();
     }
-
-    /**
-     * Проверяет столбцы на принадлежность таблице
-     * 
-     * @param table таблица
-     * @param columns столбцы
-     * @return true - все принадлежат, false - хотя бы 1 не принадлежит
-     */
-    private boolean checkColumns(Table table, Column... columns)
-    {
-        for (Column c : columns)
-        {
-            if (!table.getName().equals(c.getTable().getName()))
-                return false;
-        }
-        return true;
-    }
+   
 
     @Override
-    public List<String> getData(Table table, Column... columns)
+    public List<String> getData(Table table, List<Column> columns)
     {
-        if (!checkColumns(table, columns))
+        if (!SchemaUtils.checkColumns(table, columns))
         {
             System.out.println(
-                "1 или более столбцовне принадлежат указанной таблице!");
+                "1 или более столбцов не принадлежат указанной таблице!");
             throw new RuntimeException();
         }
         else
@@ -387,7 +381,7 @@ public class SQLiteHandler implements DatabaseHandler
     }
 
     @Override
-    public List<String> getData(Table table, List<Column> columns)
+    public List<String> getAllData(Table table, List<Column> columns)
     {
         try
         {

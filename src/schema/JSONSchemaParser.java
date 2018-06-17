@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import model.Column;
@@ -97,7 +98,7 @@ public class JSONSchemaParser
             {
                 if (newCol.getType().equals("array"))
                 {
-                    colData = (JSONObject) colData.get("items");
+                    colData = (JSONObject)colData.get("items");
                 }
 
                 if (colData.containsKey("$ref"))

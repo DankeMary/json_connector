@@ -1,4 +1,4 @@
-package handlers;
+package database;
 
 
 import java.util.List;
@@ -20,20 +20,20 @@ public interface DatabaseHandler
     void createTable(Table table, List<Column> columns);
 
     /**
-     * Возвращает значения всех столбцов из таблицы
-     * 
-     * @param table таблица
-     * @param columns список всех столбцов
-     */
-    List<String> getData(Table table, Column... columns);
-
-    /**
      * Возвращает значения указанных столбцов из таблицы
      * 
      * @param table таблица
-     * @param columns столбцы
+     * @param columns список столбцов
      */
     List<String> getData(Table table, List<Column> columns);
+
+    /**
+     * Возвращает значения всех столбцов из таблицы
+     * 
+     * @param table   таблица
+     * @param columns список всех столбцов таблицы
+     */
+    List<String> getAllData(Table table, List<Column> columns);
 
     /**
      * Загружает данные в таблицу

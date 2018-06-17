@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.json.simple.JSONObject;
 
 import database.SQLiteHandler;
-import handlers.DataHandler;
+import handler.DataHandler;
 import model.Table;
 import model.TableRow;
 import schema.JSONSchema;
@@ -31,9 +31,9 @@ public class TestClass
         Map<String, Map<TableRow, Integer>> tablesData = dataHandler
             .getTablesData();
 
-        List<Table> sortedTables = schema.getTables().stream()
-            .sorted((table1, table2) -> schemaParser.getLevel(table1)
-                - schemaParser.getLevel(table2))
+        /*List<Table> sortedTables = schema.getTables().stream()
+            .sorted((table1, table2) -> schema.getLevel(table1)
+                - schema.getLevel(table2))
             .collect(Collectors.toList());
 
         SQLiteHandler dbHandler = new SQLiteHandler(dbName);
@@ -47,7 +47,7 @@ public class TestClass
         {
             Map<TableRow, Integer> rows = tablesData.get(table.getName());
             dbHandler.uploadData(schema.getTableColumns(), table, rows);
-        }
+        }*/
 
         System.out.println("Успех.");
     }

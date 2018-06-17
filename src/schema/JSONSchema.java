@@ -80,4 +80,41 @@ public class JSONSchema
     {
         return tableColumns.get(table.getName());
     }
+    
+    /**
+     * Получение столбца из таблицы по его названию
+     * @param tableName  имя таблицы
+     * @param columnName имя искомого столбца
+     * @return           объект столбца, либо null
+     */
+    public Column getColumn(String tableName, String columnName)
+    {        
+        Optional<Column> column = tableColumns.get(tableName)
+                .stream()
+                .filter(c -> c.getName().equals(columnName))
+                .findFirst();
+        if(column.isPresent())
+            return column.get();          
+        else 
+            return null;
+    }
+    
+    /**
+     * Получение объектов столбцов по их названиям из таблицы
+     * @param tableName    имя таблицы
+     * @param columnsNames список названий столбцов
+     * @return             список столбцов 
+     */
+    public List<Column> getColumns(String tableName, List<String> columnsNames)
+    {
+        List<Column> columns = new LinkedList<Column>();
+        
+        for(String columnName : columnsNames)
+        {
+            Column column = getColumn(tableName, columnName);
+            if(column != null)
+                columns.add(column);
+        }
+        return columns;
+    }
 }

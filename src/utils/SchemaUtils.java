@@ -5,10 +5,16 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+import model.Column;
+import model.Table;
+import schema.JSONSchema;
 
 
 public class SchemaUtils
@@ -54,5 +60,36 @@ public class SchemaUtils
             System.out.println(e.getMessage());
             throw new RuntimeException();
         }
+    }
+    
+    /**
+     * Печать названий всех таблиц и их столбцов 
+     * @param schema JSON-схема
+     */
+    public void printTablesColumns(JSONSchema schema)
+    {
+        for (Map.Entry<String, List<Column>> entry : schema.getTableColumns().entrySet()) {
+             System.out.println("Table: " + entry.getKey());
+             List<Column> cols = entry.getValue();
+             for(Column c : cols)
+                 System.out.println("    " + c.getName());
+         } 
+    }   
+    
+    /**
+     * Проверяет столбцы на принадлежность таблице
+     * 
+     * @param table таблица
+     * @param columns столбцы
+     * @return true - все принадлежат, false - хотя бы 1 не принадлежит
+     */
+    public static boolean checkColumns(Table table, List<Column> columns)
+    {
+        for (Column c : columns)
+        {
+            if (!table.getName().equals(c.getTable().getName()))
+                return false;
+        }
+        return true;
     }
 }
