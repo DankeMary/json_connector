@@ -47,7 +47,6 @@ public class JSONSchema
         tables = new LinkedList<Table>(); 
         columns = new HashMap<String, List<Column>>();
         tableColumns = new HashMap<String, List<Column>>();
-        parse();
     }
    
     /**
@@ -69,6 +68,28 @@ public class JSONSchema
             return table.get();          
         else 
             return null;
+    }
+    
+
+    /**
+     * Вычисление уровня таблицы
+     * 
+     * @param table таблица
+     * @return уровень
+     */
+    public int getLevel(Table table)
+    {
+        List<Column> list = tableColumns.get(table.getName());
+        int level = 0;
+        for (Column column : list)
+        {
+            Table refTable = column.getRefTable();
+            if (refTable != null)
+            {
+                level = Math.max(getLevel(refTable), level);
+            }
+        }
+        return level + 1;
     }
     
     /**

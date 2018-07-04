@@ -48,27 +48,6 @@ public class JSONSchemaParser
     }
 
     /**
-     * Вычисление уровня таблицы
-     * 
-     * @param table таблица
-     * @return уровень
-     */
-    public int getLevel(Table table)
-    {
-        List<Column> list = tableColumns.get(table.getName());
-        int level = 0;
-        for (Column column : list)
-        {
-            Table refTable = column.getRefTable();
-            if (refTable != null)
-            {
-                level = Math.max(getLevel(refTable), level);
-            }
-        }
-        return level + 1;
-    }
-
-    /**
      * Разбор пар в properties на столбцы и таблицы
      * 
      * @param parentTable таблица-владелец

@@ -20,7 +20,6 @@ public class Utility
     private String dbName;
     private JSONSchema schema;
     private JSONObject data;
-    private JSONSchemaParser schemaParser;
     private DataHandler dataHandler;    
     private Map<String, Map<TableRow, Integer>> tablesData;
     private List<Table> sortedTables;
@@ -31,7 +30,6 @@ public class Utility
         dbName = null;
         schema = null;
         data = null;
-        schemaParser = null;
         dataHandler = null;    
         tablesData = null;
         sortedTables = null;
@@ -47,7 +45,7 @@ public class Utility
         dbName = SchemaUtils.getTableName(schemaPath);
         schema = new JSONSchema(dbName,
             SchemaUtils.getJson(schemaPath));
-        schemaParser = new JSONSchemaParser(schema);
+        schema.parse();
     }
     
     /**
@@ -64,8 +62,8 @@ public class Utility
         tablesData = dataHandler.getTablesData();
 
         sortedTables = schema.getTables().stream()
-            .sorted((table1, table2) -> schemaParser.getLevel(table1)
-                - schemaParser.getLevel(table2))
+            .sorted((table1, table2) -> schema.getLevel(table1)
+                - schema.getLevel(table2))
             .collect(Collectors.toList());
     }
     
